@@ -8,6 +8,15 @@ export const findUserByEmailWithPassword = async (email : string): Promise<IUser
     return User.findOne({ email }).select("+password");
 };
 
+export const findUserByIdentifierWithPassword = async (identifier: string): Promise<IUser | null> => {
+    return User.findOne({
+        $or: [
+            {email: identifier.toLowerCase()},
+            {username: identifier.toLowerCase()}
+        ]
+    }).select("+password");
+}
+
 export const findUserByUsername = async (username: string): Promise<IUser | null> => {
     return User.findOne({ username });
 };

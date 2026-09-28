@@ -1,0 +1,17 @@
+import { User, type IUser } from "../models/userModel.js";
+
+export const findUserByEmail = async (email: string): Promise<IUser | null> => {
+    return User.findOne({ email });
+};
+
+export const findUserByEmailWithPassword = async (email : string): Promise<IUser | null> => {
+    return User.findOne({ email }).select("+password");
+};
+
+export const findUserByUsername = async (username: string): Promise<IUser | null> => {
+    return User.findOne({ username });
+};
+
+export const createUser = async (userData: Partial<IUser>): Promise<IUser> => {
+    return User.create(userData);
+};

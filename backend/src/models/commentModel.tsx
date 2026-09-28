@@ -44,7 +44,7 @@ const commentSchema = new Schema<IComment>(
         },
 
         likesCount:{
-            types: Number,
+            type: Number,
             default: 0,
             min: 0
         }

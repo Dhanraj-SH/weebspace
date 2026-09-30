@@ -1,8 +1,10 @@
 import bcrypt from 'bcrypt';
-import { findUserByEmail, findUserByUsername, createUser, findUserByIdentifierWithPassword } from '../repositories/userRepository.js';
+import { findUserByEmail, findUserByUsername, createUser, findUserByIdentifierWithPassword, findUserById } from '../repositories/userRepository.js';
 import type { RegisterUserData, LoginUserData } from '../validators/authValidators.js';
 import { AppError } from '../utils/appError.js';
-import { generateToken } from '../utils/generateToken.js';
+import { generateAccessToken } from '../utils/generateAccessToken.js';
+import { generateRefershToken } from '../utils/generateRefreshToken.js';
+import { verifyRefreshToken } from '../utils/verifyRefreshToken.js';
 
 export const registerUser = async(userData: RegisterUserData) => {
     const existingEmail = await findUserByEmail(userData.email);
@@ -42,10 +44,30 @@ export const loginUser = async(userData: LoginUserData) => {
         throw new AppError("Invalid credentails", 401);
     }
 
-    const token = generateToken(user._id.toString());
+    const userId = user._id.toString();
+
+    const accessToken = generateAccessToken(userId);
+    const refreshToken = generateRefershToken(userId);
 
     return {
         user,
-        token
+        accessToken,
+        refreshToken
     };
 };
+
+export const getCurrentUser = async (userId: string) => {
+    const user = await findUserById(userId);
+
+    if(!user){
+        throw new AppError("User not found", 404);
+    }
+
+    return user;
+}
+
+export const refreshAccessToken = (refreshToken: string): string => {
+    const decoded = verifyRefreshToken(refreshToken);
+    const accessToken = generateAccessToken(decoded.userId);
+    return accessToken;
+}

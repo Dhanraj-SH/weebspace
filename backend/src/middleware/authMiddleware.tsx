@@ -32,7 +32,7 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: Nex
             return;
         }
 
-        const secret = process.env.JWT_SECRET || "alternativeSecret";
+        const secret = process.env.JWT_ACCESS_SECRET || "alternativeSecret";
 
         const decoded = jwt.verify(token, secret) as JwtPlayload;
 

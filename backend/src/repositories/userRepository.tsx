@@ -1,5 +1,9 @@
 import { User, type IUser } from "../models/userModel.js";
 
+export const findUserById = async (userId: string): Promise<IUser | null> => {
+    return User.findById( userId );
+}
+
 export const findUserByEmail = async (email: string): Promise<IUser | null> => {
     return User.findOne({ email });
 };

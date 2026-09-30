@@ -1,21 +1,13 @@
 import { Router, type Request } from "express";
-import { register, login } from "../controllers/authController.js";
+import { register, login, getMe, logout, refresh } from "../controllers/authController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
-
-interface AuthenticatedRequest extends Request {
-    userId?: string;
-}
 
 const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
-
-router.get("/protected-test", authenticate, (req: AuthenticatedRequest, res) => {
-    res.status(200).json({
-        message: "You are authenticated",
-        userId: req.userId,
-    });
-});
+router.get("/me",authenticate, getMe);
+router.post("/refresh", refresh);
+router.post("/logout", logout); 
 
 export default router;

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-const mangaGenres = [
+export const mangaGenres = [
     "action",
     "actionAdventure",
     "adventure",
@@ -55,7 +55,7 @@ const mangaGenres = [
     "vampire",
 ] as const;
 
-enum MangaStatus {
+export enum MangaStatus {
     Ongoing = "ongoing",
     Completed = "completed",
     Hiatus = "hiatus",

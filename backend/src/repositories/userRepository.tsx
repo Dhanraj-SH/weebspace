@@ -1,4 +1,5 @@
 import { User, type IUser } from "../models/userModel.js";
+import type { UpdateMyProfileData } from "../validators/userValidator.js";
 
 export const findUserById = async (userId: string): Promise<IUser | null> => {
     return User.findById( userId );
@@ -27,4 +28,15 @@ export const findUserByUsername = async (username: string): Promise<IUser | null
 
 export const createUser = async (userData: Partial<IUser>): Promise<IUser> => {
     return User.create(userData);
+};
+
+export const updateUserById = async(userId: string, userData: UpdateMyProfileData): Promise<IUser | null> => {
+    return User.findByIdAndUpdate(
+        userId,
+        userData,
+        {
+            returnDocument: "after",
+            runValidators: true
+        }
+    );
 };

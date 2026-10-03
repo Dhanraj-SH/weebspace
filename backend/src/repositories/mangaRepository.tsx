@@ -20,7 +20,7 @@ export const updateMangeById = async(mangaId: string, mangaData: UpdateMangaData
         mangaId,
         cleanedData,
         {
-            new: true,
+            returnDocument: after,
             runValidators: true,
         }
     );

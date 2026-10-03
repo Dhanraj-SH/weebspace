@@ -25,7 +25,7 @@ export const updateChapterById = async(chapterId: string, chapterData: UpdateCha
     return Chapter.findByIdAndUpdate(
         chapterId, 
         cleanedData, {
-            new: true,
+            returnDocument: "after",
             runValidators: true
         }
     );

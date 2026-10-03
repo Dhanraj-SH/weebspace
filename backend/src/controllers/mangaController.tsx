@@ -139,7 +139,7 @@ export const deleteMangaController = async(req: Request, res: Response, next: Ne
 
         res.status(200).json({
             message: "Manga deleted successfully",
-            manga: manga.title
+            manga: manga
         });
     } catch(error) {
         next(error);

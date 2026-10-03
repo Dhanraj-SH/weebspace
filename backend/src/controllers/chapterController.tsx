@@ -1,8 +1,7 @@
-import { type Request, type Response, type NextFunction, response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { getChapterById, getChaptersByMangaId, createChapter as createChapterService, updateChapter as updateChapterService, deleteChapter as deleteChapterService } from "../services/chapterService.js";
 import { mangaIdSchema } from "../validators/mangaValidators.js";
 import { chapterIdSchema, createChapterSchema, updateChapterSchema } from "../validators/chapterValidator.js";
-import { error } from "node:console";
 
 export const getChaptersByManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
     const response = mangaIdSchema.safeParse(req.params);

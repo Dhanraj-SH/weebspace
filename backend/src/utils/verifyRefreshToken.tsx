@@ -6,7 +6,11 @@ interface RefreshTokenPlayload{
 }
 
 export const verifyRefreshToken = (token: string): RefreshTokenPlayload => {
-    const secret = process.env.JWT_REFRESH_SECRET || 'alternativeSecret';
+    const secret = process.env.JWT_REFRESH_SECRET;
+
+    if(!secret){
+        throw new Error("JWT_REFRESH_SECRET is not configured");
+    }
     
     return jwt.verify(token, secret) as RefreshTokenPlayload;
 }

@@ -3,7 +3,7 @@ import { findUserByEmail, findUserByUsername, createUser, findUserByIdentifierWi
 import type { RegisterUserData, LoginUserData } from '../validators/authValidators.js';
 import { AppError } from '../utils/appError.js';
 import { generateAccessToken } from '../utils/generateAccessToken.js';
-import { generateRefershToken } from '../utils/generateRefreshToken.js';
+import { generateRefreshToken } from '../utils/generateRefreshToken.js';
 import { verifyRefreshToken } from '../utils/verifyRefreshToken.js';
 
 export const registerUser = async(userData: RegisterUserData) => {
@@ -19,7 +19,7 @@ export const registerUser = async(userData: RegisterUserData) => {
         throw new AppError("Username is already taken", 409);
     }
 
-    const hashPassword = await bcrypt.hash(userData.password, 10);
+    const hashPassword = await bcrypt.hash(userData.password, 12);
 
     const user = await createUser({
         name: userData.name,
@@ -35,7 +35,7 @@ export const loginUser = async(userData: LoginUserData) => {
     const user = await findUserByIdentifierWithPassword(userData.identifier);
 
     if(!user || !user.password){
-        throw new AppError("Invalid Credentails", 401);
+        throw new AppError("Invalid credentails", 401);
     }
 
     const passwordMatches = await bcrypt.compare(userData.password, user.password);
@@ -47,7 +47,7 @@ export const loginUser = async(userData: LoginUserData) => {
     const userId = user._id.toString();
 
     const accessToken = generateAccessToken(userId);
-    const refreshToken = generateRefershToken(userId);
+    const refreshToken = generateRefreshToken(userId);
 
     return {
         user,

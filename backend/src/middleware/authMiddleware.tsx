@@ -1,6 +1,7 @@
 import "dotenv/config"
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { object } from "zod";
 
 interface JwtPlayload{
     userId: string
@@ -32,9 +33,21 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: Nex
             return;
         }
 
-        const secret = process.env.JWT_ACCESS_SECRET || "alternativeSecret";
+        const secret = process.env.JWT_ACCESS_SECRET;
+
+        if(!secret){
+            throw new Error("JWT_ACCESS_SECRET is not configured");
+        }
 
         const decoded = jwt.verify(token, secret) as JwtPlayload;
+
+        if(typeof decoded !== "object" || decoded === null || typeof decoded.userId !== "string"){
+            res.status(401).json({
+                message: "Invalid token playload"
+            });
+            
+            return;
+        }
 
         req.userId = decoded.userId;
         next();

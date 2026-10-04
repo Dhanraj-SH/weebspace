@@ -1,6 +1,6 @@
 import mongoose, {Document, Schema} from "mongoose";
 
-enum LibraryStatus{
+export enum LibraryStatus{
     Reading = "reading",
     Completed = "completed",
     PlanToRead = "planToRead",

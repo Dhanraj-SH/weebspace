@@ -2,15 +2,15 @@ import { Chapter, type IChapter } from "../models/chapterModel.js";
 import type { CreateChapterData, UpdateChapterData } from "../validators/chapterValidator.js";
 
 export const findChapterByMangaId = async(mangaId: string): Promise<IChapter[]> => {
-    return Chapter.find({ mangaId }).sort({ chapterNumber: 1 });
+    return await Chapter.find({ mangaId }).sort({ chapterNumber: 1 });
 };
 
 export const findChapterById = async(chapterId: string): Promise<IChapter | null> => {
-    return Chapter.findById(chapterId);
+    return await Chapter.findById(chapterId);
 };
 
 export const createChapter = async(mangaId: string, chapterData: CreateChapterData): Promise<IChapter> => {
-    return Chapter.create({
+    return await Chapter.create({
         mangaId,
         chapterNumber: chapterData.chapterNumber,
         pages: chapterData.pages,
@@ -22,7 +22,7 @@ export const createChapter = async(mangaId: string, chapterData: CreateChapterDa
 export const updateChapterById = async(chapterId: string, chapterData: UpdateChapterData): Promise<IChapter | null> => {
     const cleanedData = Object.fromEntries(Object.entries(chapterData).filter(([, value]) => value !== undefined));
 
-    return Chapter.findByIdAndUpdate(
+    return await Chapter.findByIdAndUpdate(
         chapterId, 
         cleanedData, {
             returnDocument: "after",
@@ -32,5 +32,5 @@ export const updateChapterById = async(chapterId: string, chapterData: UpdateCha
 };
 
 export const deleteChapterById = async(chapterId: string): Promise<IChapter | null> => {
-    return Chapter.findByIdAndDelete(chapterId);
-}
+    return await Chapter.findByIdAndDelete(chapterId);
+};

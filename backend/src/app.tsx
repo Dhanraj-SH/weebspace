@@ -5,6 +5,7 @@ import mangaRoutes from './routes/mangaRoutes.js';
 import chapterRoutes from './routes/chapterRoutes.js';
 import libraryRoutes from './routes/libraryRoutes.js';
 import progressRoutes from './routes/readingProgressRoutes.js';
+import ratingRoutes from './routes/ratingRoutes.js';
 import cors from 'cors';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -19,6 +20,7 @@ app.use("/api/v1/manga", mangaRoutes);
 app.use("/api/v1", chapterRoutes);
 app.use("/api/v1/library", libraryRoutes);
 app.use("/api/v1/reading-progress", progressRoutes);
+app.use("/api/v1/manga", ratingRoutes)
 app.use(errorHandler);
 
 export default app;

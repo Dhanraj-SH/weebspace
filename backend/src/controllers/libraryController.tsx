@@ -3,8 +3,6 @@ import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { getLibraryByUserId, createLibrary as createLibraryService, updateLibraryById, deleteLibraryById } from "../services/libraryService.js";
 import { createLibrarySchema, updateLibrarySchema } from "../validators/libraryValidators.js";
 import { mangaIdSchema } from "../validators/mangaValidators.js";
-import { success } from "zod";
-import { error } from "node:console";
 
 export const getLibrary = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try{

@@ -2,7 +2,6 @@ import { getUserById as fetchUser, updateProfileById } from "../services/userSer
 import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { updateProfileSchema, userIdSchema } from "../validators/userValidator.js";
-import { error } from "node:console";
 
 export const getMe = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {

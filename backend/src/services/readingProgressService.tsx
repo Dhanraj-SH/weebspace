@@ -2,7 +2,6 @@ import { deleteReadingProgress, findReadingProgress, updateReadingProgress } fro
 import type { UpdateProgressData } from "../validators/readingProgressValidators.js";
 import { findChapterById } from "../repositories/chapterRepository.js";
 import { AppError } from "../utils/appError.js";
-import { string } from "zod";
 
 export const getReadingProgessById = async(userId: string, mangaId: string) => {
     return await findReadingProgress(userId, mangaId);

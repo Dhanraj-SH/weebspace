@@ -1,4 +1,3 @@
-import { Chapter, type IChapter } from "../models/chapterModel.js";
 import { ReadingProgress, type IReadingProgress } from "../models/readingProgressModel.js";
 import type { UpdateProgressData } from "../validators/readingProgressValidators.js";
 
@@ -27,6 +26,6 @@ export const updateReadingProgress = async(userId: string, mangaId: string, prog
     );
 };
 
-export const deleteReadingProgress = async(userId: string, mangaId: string): Promise<IChapter | null> => {
+export const deleteReadingProgress = async(userId: string, mangaId: string): Promise<IReadingProgress | null> => {
     return await ReadingProgress.findOneAndDelete({userId, mangaId});
 };

@@ -1,4 +1,5 @@
 import { createLibraryEntry, deleteLibraryEntry, findLibraryByUserId, updateLibraryEntry } from "../repositories/libraryRepository.js";
+import { findMangaById } from "../repositories/mangaRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateLibraryData, UpdateLibraryData } from "../validators/libraryValidators.js";
 
@@ -8,6 +9,12 @@ export const getLibraryByUserId = async(userId: string) => {
 
 export const createLibrary = async(userId: string, libraryData: CreateLibraryData) => {
     try{
+        const manga = await findMangaById(libraryData.mangaId);
+
+        if(!manga){
+            throw new AppError("Manga not found", 404);
+        }
+
         return await createLibraryEntry(userId, libraryData);
     } catch(error: any){
         if(error.code === 11000){
@@ -19,9 +26,22 @@ export const createLibrary = async(userId: string, libraryData: CreateLibraryDat
 };
 
 export const updateLibraryById = async(userId: string, mangaId: string, libraryData: UpdateLibraryData) => {
+    const manga = await findMangaById(mangaId);
+
+    if(!manga){
+        throw new AppError("Manga not found", 404);
+    }
+
     return await updateLibraryEntry(userId, mangaId, libraryData);
 }
 
 export const deleteLibraryById = async(userId: string, mangaId: string) => {
+
+    const manga = await findMangaById(mangaId);
+
+    if(!manga){
+        throw new AppError("Manga not found", 404);
+    }
+
     return await deleteLibraryEntry(userId, mangaId);
 };

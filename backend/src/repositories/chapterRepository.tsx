@@ -34,3 +34,7 @@ export const updateChapterById = async(chapterId: string, chapterData: UpdateCha
 export const deleteChapterById = async(chapterId: string): Promise<IChapter | null> => {
     return await Chapter.findByIdAndDelete(chapterId);
 };
+
+export const deleteChapterByMangaId = async(mangaId: string) => {
+    return await Chapter.deleteMany({mangaId});
+};

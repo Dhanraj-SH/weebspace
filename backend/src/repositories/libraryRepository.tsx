@@ -27,3 +27,7 @@ export const deleteLibraryEntry = async(userId: string, mangaId: string): Promis
         mangaId
     });
 };
+
+export const deleteLibraryEntryById = async(mangaId: string) => {
+    return await Library.deleteMany({mangaId});
+};

@@ -29,3 +29,7 @@ export const updateReadingProgress = async(userId: string, mangaId: string, prog
 export const deleteReadingProgress = async(userId: string, mangaId: string): Promise<IReadingProgress | null> => {
     return await ReadingProgress.findOneAndDelete({userId, mangaId});
 };
+
+export const deleteReadingProgressById = async(mangaId: string) => {
+    return await ReadingProgress.deleteMany({mangaId});
+};

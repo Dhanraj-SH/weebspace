@@ -23,3 +23,7 @@ export const upsertRatingById = async(userId: string, mangaId: string, ratingDat
 export const deleteRatingById = async(userId: string, mangaId: string): Promise<IRating | null> => {
     return await Rating.findOneAndDelete({userId, mangaId});
 }
+
+export const deleteRatingByMangaId = async(mangaId: string) => {
+    return await Rating.deleteMany({mangaId});
+}

@@ -18,5 +18,11 @@ export const saveRatingService = async(userId: string, mangaId: string, ratingDa
 };
 
 export const removeRatingService = async(userId: string, mangaId: string) => {
+    const manga = await findMangaById(mangaId);
+
+    if(!manga){
+        throw new AppError("Manga not found", 404);
+    }
+
     return await deleteRatingById(userId, mangaId);
 }

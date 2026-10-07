@@ -41,7 +41,7 @@ const reviewSchema = new Schema<IReview>(
 
         likesCount: {
             type: Number,
-            defalut: 0,
+            default: 0,
             min: 0
         }
     },{

@@ -5,6 +5,7 @@ import { deleteRatingByMangaId } from "../repositories/ratingRepository.js";
 import { deleteReadingProgressById } from "../repositories/readingProgessRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateMangaData, UpdateMangaData } from "../validators/mangaValidators.js";
+import { deleteReviewByMangaId } from "../repositories/reviewRepository.js";
 
 export const getAllManga = async() => {
     return await findAllManga();
@@ -33,6 +34,7 @@ export const deleteManga = async (mangaId: string) => {
     await deleteLibraryEntryById(mangaId);
     await deleteReadingProgressById(mangaId);
     await deleteRatingByMangaId(mangaId);
-    
+    await deleteReviewByMangaId(mangaId);
+
     return await deleteMangaById(mangaId);
 };

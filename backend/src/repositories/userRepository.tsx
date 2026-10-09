@@ -31,9 +31,17 @@ export const createUser = async (userData: Partial<IUser>): Promise<IUser> => {
 };
 
 export const updateUserById = async(userId: string, userData: UpdateMyProfileData): Promise<IUser | null> => {
+    const { name, username, avatar } = userData;
+
     return await User.findByIdAndUpdate(
         userId,
-        userData,
+        {
+            $set: {
+                ...(name !== undefined && { name }),
+                ...(username !== undefined && { username }),
+                ...(avatar !== undefined && { avatar }),
+            },
+        },
         {
             returnDocument: "after",
             runValidators: true

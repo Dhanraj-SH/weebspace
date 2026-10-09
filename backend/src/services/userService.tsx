@@ -15,4 +15,4 @@ export const updateProfileById = async (userId: string, userData: UpdateMyProfil
         }
     }
     return await updateUserById(userId, userData);
-}
+};

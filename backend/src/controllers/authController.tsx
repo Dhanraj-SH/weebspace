@@ -1,9 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import { registerUser, loginUser, getCurrentUser } from "../services/authService.js";
+import { registerUser, loginUser, getCurrentUser, loginWithGoogle } from "../services/authService.js";
 import { registerSchema, loginSchema } from "../validators/authValidators.js";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { verifyRefreshToken } from "../utils/verifyRefreshToken.js";
 import { generateAccessToken } from "../utils/generateAccessToken.js" 
+import { getGoogleAuthUrl, getGoogleProfile } from "../providers/googleAuthProvider.js";
 
 export const register = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
     const response = registerSchema.safeParse(req.body);
@@ -71,6 +72,47 @@ export const login = async(req: Request, res: Response, next: NextFunction): Pro
     }
 
 };
+
+export const googleLogin = async(_req: Request, res: Response): Promise<void> => {
+    res.redirect(getGoogleAuthUrl());
+};
+
+export const googleCallback = async(req: Request, res: Response, next: NextFunction) : Promise<void> => {
+    try{
+        const code = typeof req.query.code === "string" ? req.query.code : undefined;
+
+        if(!code){
+            res.status(400).json({
+                success: false,
+                message: "Google authorization code is missing"
+            });
+
+            return;
+        }
+
+        const profile = await getGoogleProfile(code);
+        const response = await loginWithGoogle(profile);
+
+        res.status(200).json({
+            success: true,
+            message: "Google authentication successful",
+            data: {
+                user: {
+                    id: response.user._id.toString(),
+                    name: response.user.name,
+                    username: response.user.username,
+                    email: response.user.email,
+                    avatar: response.user.avatar,
+                    role: response.user.role, 
+                },
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken,
+            },
+        });
+    } catch(error) {
+        next(error);
+    }
+}
 
 export const logout = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {

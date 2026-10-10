@@ -9,6 +9,10 @@ export const findUserByEmail = async (email: string): Promise<IUser | null> => {
     return await User.findOne({ email });
 };
 
+export const findUserByGoogleId = async (googleId: string): Promise<IUser | null> => {
+    return await User.findOne({ googleId });
+}
+
 export const findUserByEmailWithPassword = async (email : string): Promise<IUser | null> => {
     return await User.findOne({ email }).select("+password");
 };

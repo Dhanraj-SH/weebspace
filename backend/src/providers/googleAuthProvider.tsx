@@ -52,7 +52,7 @@ export const getGoogleProfile = async(code: string): Promise<GoogleProfile> => {
 
     const payload = ticket.getPayload();
 
-    if(!payload?.sub || !payload.email || !payload.email_verified !== true || !payload.name){
+    if(!payload?.sub || !payload.email || payload.email_verified !== true || !payload.name){
         throw new Error("Google account information is missing or unverified");
     }
 

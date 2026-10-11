@@ -49,7 +49,7 @@ export const loginUser = async(userData: LoginUserData) => {
     const userId = user._id.toString();
 
     const accessToken = generateAccessToken(userId);
-    const refreshToken = generateRefreshToken(userId);
+    const refreshToken = generateRefreshToken(userId, user.tokenVersion);
 
     return {
         user,
@@ -67,7 +67,7 @@ export const loginWithGoogle = async(profile: GoogleProfile) => {
         return {
             user: existingGoogleUser,
             accessToken: generateAccessToken(userId),
-            refreshToken: generateRefreshToken(userId)
+            refreshToken: generateRefreshToken(userId, existingGoogleUser.tokenVersion)
         };
     }
 

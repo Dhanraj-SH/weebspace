@@ -14,6 +14,7 @@ export interface IUser extends Document {
     avatar?: string;
     googleId?: string;
     role: UserRole;
+    tokenVersion: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -62,6 +63,11 @@ const userSchema = new Schema<IUser>(
             enum: Object.values(UserRole),
             default: UserRole.User,
         },
+
+        tokenVersion: {
+            type: Number,
+            default: 0
+        }
     },
     {
         timestamps: true,

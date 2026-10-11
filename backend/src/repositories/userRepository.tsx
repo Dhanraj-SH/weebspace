@@ -52,3 +52,10 @@ export const updateUserById = async(userId: string, userData: UpdateMyProfileDat
         }
     );
 };
+
+export const incrementUserTokenVersion = async( userId: string): Promise<void> => {
+    await User.updateOne(
+        { _id: userId},
+        { $inc: {tokenVersion: 1}}
+    );
+};

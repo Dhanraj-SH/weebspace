@@ -1,3 +1,4 @@
+import "dotenv/config";
 import type { Request, Response, NextFunction } from "express";
 import { registerUser, loginUser, getCurrentUser, loginWithGoogle } from "../services/authService.js";
 import { registerSchema, loginSchema } from "../validators/authValidators.js";
@@ -5,6 +6,9 @@ import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { verifyRefreshToken } from "../utils/verifyRefreshToken.js";
 import { generateAccessToken } from "../utils/generateAccessToken.js" 
 import { getGoogleAuthUrl, getGoogleProfile } from "../providers/googleAuthProvider.js";
+import { randomBytes, timingSafeEqual } from "node:crypto";
+import { string, success } from "zod";
+import { findUserById, incrementUserTokenVersion } from "../repositories/userRepository.js";
 
 export const register = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
     const response = registerSchema.safeParse(req.body);
@@ -70,21 +74,56 @@ export const login = async(req: Request, res: Response, next: NextFunction): Pro
     } catch(error) {
         next(error);
     }
-
 };
 
-export const googleLogin = async(_req: Request, res: Response): Promise<void> => {
-    res.redirect(getGoogleAuthUrl());
+export const googleLogin = async(_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const state = randomBytes(32).toString("hex");
+
+        res.cookie("weebspace_oauth_state", state, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 10 * 60 * 1000,
+            path: "/api/v1/auth/google/callback"
+        });
+
+        res.redirect(getGoogleAuthUrl(state));
+    } catch(error) {
+        next(error);
+    }
 };
 
 export const googleCallback = async(req: Request, res: Response, next: NextFunction) : Promise<void> => {
     try{
         const code = typeof req.query.code === "string" ? req.query.code : undefined;
+        const returnedState = typeof req.query.state === "string" ? req.query.state : undefined;
 
-        if(!code){
+        const cookieState: unknown = req.cookies?.weebspace_oauth_state;
+
+        res.clearCookie("weebspace_oauth_state", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/api/v1/auth/google/callback"
+        })
+
+        if(!code || !returnedState || typeof cookieState !== "string"){
             res.status(400).json({
                 success: false,
-                message: "Google authorization code is missing"
+                message: "Invalid or incomplete Google OAuth callback"
+            });
+
+            return;
+        }
+
+        const returnedBuffer = Buffer.from(returnedState);
+        const cookieBuffer = Buffer.from(cookieState);
+
+        if(returnedBuffer.length !== cookieBuffer.length || !timingSafeEqual(returnedBuffer, cookieBuffer)){
+            res.status(400).json({
+                success: false,
+                message: "Google OAuth state validation failed",
             });
 
             return;
@@ -122,6 +161,8 @@ export const logout = async(req: AuthenticatedRequest, res: Response, next: Next
             });
             return;
         }
+
+        await incrementUserTokenVersion(req.userId);
 
         res.status(200).json({
             message: "Logout successful",
@@ -183,15 +224,34 @@ export const refresh = async(req: Request, res: Response, next: NextFunction): P
         }
 
         const decoded = verifyRefreshToken(refreshToken);
+        const user = await findUserById(decoded.userId);
 
-        const accessToken = generateAccessToken(
-            decoded.userId
-        );
+        if(!user || user.tokenVersion !== decoded.tokenVersion){
+            res.status(401).json({
+                message: "Refresh token is no longer valid"
+            });
+
+            return;
+        }
+
+        const accessToken = generateAccessToken( user._id.toString());
 
         res.status(200).json({
             accessToken
         });
     } catch(error) {
+        if (
+            error instanceof Error &&
+            error.name === "JsonWebTokenError" ||
+            error instanceof Error &&
+            error.name === "TokenExpiredError"
+        ) {
+            res.status(401).json({
+                message: "Invalid or expired refresh token",
+            });
+            return;
+        }
+
         next(error);
     }   
 };

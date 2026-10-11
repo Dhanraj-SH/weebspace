@@ -14,13 +14,14 @@ const getGoogleOAuthClient = (): OAuth2Client => {
     return new OAuth2Client(clientId, clientSecret, redirectUri);
 };
 
-export const getGoogleAuthUrl = (): string => {
+export const getGoogleAuthUrl = (state: string): string => {
     const client = getGoogleOAuthClient();
 
     return client.generateAuthUrl({
         access_type: "offline",
         scope: ["openid", "email", "profile"],
-        prompt: "select_account"
+        prompt: "select_account",
+        state,
     });
 };
 

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 
-export const generateRefreshToken = (userId: string): string => {
+export const generateRefreshToken = (userId: string, tokenVersion: number): string => {
    const secret = process.env.JWT_REFRESH_SECRET;
    
     if(!secret){
@@ -9,7 +9,7 @@ export const generateRefreshToken = (userId: string): string => {
     }
 
     return jwt.sign(
-        {userId},
+        {userId, tokenVersion},
         secret,
         {expiresIn: "7d"}
     );

@@ -2,7 +2,8 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 
 interface RefreshTokenPlayload{
-    userId: string
+    userId: string,
+    tokenVersion: number
 }
 
 export const verifyRefreshToken = (token: string): RefreshTokenPlayload => {
@@ -12,5 +13,12 @@ export const verifyRefreshToken = (token: string): RefreshTokenPlayload => {
         throw new Error("JWT_REFRESH_SECRET is not configured");
     }
     
-    return jwt.verify(token, secret) as RefreshTokenPlayload;
+    const decoded = jwt.verify(token, secret);
+
+    
+    if ( typeof decoded === "string" || typeof decoded.userId !== "string" || typeof decoded.tokenVersion !== "number" ) {
+        throw new Error("Invalid refresh token payload");
+    }
+
+    return decoded as RefreshTokenPlayload;
 }

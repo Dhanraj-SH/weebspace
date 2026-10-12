@@ -1,10 +1,10 @@
-import { deleteMangaById, findAllManga, findMangaById, updateMangeById, createManga as createMangaRepository } from "../repositories/mangaRepository.js";
+import { deleteMangaById, findAllManga, findMangaById, updateMangeById, createManga as createMangaRepository, searchMangaByQuery } from "../repositories/mangaRepository.js";
 import { deleteChapterByMangaId } from "../repositories/chapterRepository.js";
 import { deleteLibraryEntryById } from "../repositories/libraryRepository.js";
 import { deleteRatingByMangaId } from "../repositories/ratingRepository.js";
 import { deleteReadingProgressById } from "../repositories/readingProgessRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { CreateMangaData, UpdateMangaData } from "../validators/mangaValidators.js";
+import type { CreateMangaData, SearchMangaQuery, UpdateMangaData } from "../validators/mangaValidators.js";
 import { deleteReviewByMangaId } from "../repositories/reviewRepository.js";
 import { deleteCommentByMangaId } from "../repositories/commentRepository.js";
 
@@ -40,3 +40,7 @@ export const deleteManga = async (mangaId: string) => {
 
     return await deleteMangaById(mangaId);
 };
+
+export const searchMangaService = async ( query: SearchMangaQuery) => {
+    return await searchMangaByQuery(query);
+}

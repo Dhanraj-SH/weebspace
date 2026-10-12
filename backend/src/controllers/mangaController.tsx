@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction, response } from "express";
-import { getAllManga, getMangaById, createManga, updateManga, deleteManga } from "../services/mangaService.js";
-import { mangaIdSchema, createMangaSchema, updateMangaSchema } from "../validators/mangaValidators.js";
+import { getAllManga, getMangaById, createManga, updateManga, deleteManga, searchMangaService } from "../services/mangaService.js";
+import { mangaIdSchema, createMangaSchema, updateMangaSchema, searchMangaQuerySchema } from "../validators/mangaValidators.js";
+import { success } from "zod";
 
 export const getManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -140,6 +141,31 @@ export const deleteMangaController = async(req: Request, res: Response, next: Ne
         res.status(200).json({
             message: "Manga deleted successfully",
             manga: manga
+        });
+    } catch(error) {
+        next(error);
+    }
+};
+
+export const searchManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try{
+        const queryResponse = searchMangaQuerySchema.safeParse(req.query);
+        
+        if(!queryResponse.success){
+            res.status(400).json({
+                message: "Invalid search query parameters",
+                errors: queryResponse.error.issues
+            });
+
+            return;
+        }
+
+        const result = await searchMangaService(queryResponse.data);
+
+        res.status(200).json({
+            success: true,
+            data: result.manga,
+            pagination: result.pagination
         });
     } catch(error) {
         next(error);

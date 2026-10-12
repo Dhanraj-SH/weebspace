@@ -1,10 +1,10 @@
 import { createLibraryEntry, deleteLibraryEntry, findLibraryByUserId, updateLibraryEntry } from "../repositories/libraryRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { CreateLibraryData, UpdateLibraryData } from "../validators/libraryValidators.js";
+import type { CreateLibraryData, FilterStatusData, UpdateLibraryData } from "../validators/libraryValidators.js";
 
-export const getLibraryByUserId = async(userId: string) => {
-    return await findLibraryByUserId(userId);
+export const getLibraryByUserId = async(userId: string, status: FilterStatusData) => {
+    return await findLibraryByUserId(userId, status);
 };
 
 export const createLibrary = async(userId: string, libraryData: CreateLibraryData) => {

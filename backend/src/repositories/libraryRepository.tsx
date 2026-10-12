@@ -4,8 +4,8 @@ import type { CreateLibraryData, FilterStatusData, UpdateLibraryData } from "../
 export const findLibraryByUserId = async(userId: string, status: FilterStatusData): Promise<ILibrary[]> => {
     const filter: Record<string, unknown> = { userId };
 
-    if(status) {
-        filter.status = status;
+    if(status.status !== undefined) {
+        filter.status = status.status;
     }
 
     return await Library.find(filter).populate("mangaId").sort({updatedAt: -1});

@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { getLibraryByUserId, createLibrary as createLibraryService, updateLibraryById, deleteLibraryById } from "../services/libraryService.js";
-import { createLibrarySchema, updateLibrarySchema } from "../validators/libraryValidators.js";
+import { createLibrarySchema, filterStatusSchema, updateLibrarySchema } from "../validators/libraryValidators.js";
 import { mangaIdSchema } from "../validators/mangaValidators.js";
 
 export const getLibrary = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -14,8 +14,19 @@ export const getLibrary = async(req: AuthenticatedRequest, res: Response, next: 
     
             return;
         }
+
+        const response = filterStatusSchema.safeParse(req.query);
+        
+        if(!response.success){
+            res.status(400).json({
+                message: "Validation required",
+                error: response.error.issues
+            });
+
+            return;
+        }
     
-        const library = await getLibraryByUserId(req.userId);
+        const library = await getLibraryByUserId(req.userId, response.data);
     
         res.status(200).json({
             library,

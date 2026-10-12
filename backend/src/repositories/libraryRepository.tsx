@@ -1,8 +1,14 @@
 import { Library, type ILibrary } from "../models/libraryModel.js";
-import type { CreateLibraryData, UpdateLibraryData } from "../validators/libraryValidators.js";
+import type { CreateLibraryData, FilterStatusData, UpdateLibraryData } from "../validators/libraryValidators.js";
 
-export const findLibraryByUserId = async(userId: string): Promise<ILibrary[]> => {
-    return await Library.find({userId}).sort({updatedAt: -1});
+export const findLibraryByUserId = async(userId: string, status: FilterStatusData): Promise<ILibrary[]> => {
+    const filter: Record<string, unknown> = { userId };
+
+    if(status) {
+        filter.status = status;
+    }
+
+    return await Library.find(filter).populate("mangaId").sort({updatedAt: -1});
 };
 
 export const createLibraryEntry = async(userId: string, libraryData: CreateLibraryData): Promise<ILibrary> => {

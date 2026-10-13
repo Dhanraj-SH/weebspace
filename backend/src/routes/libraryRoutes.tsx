@@ -4,9 +4,11 @@ import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/",authenticate, getLibrary);
-router.post("/",authenticate, createLibrary);
-router.patch("/:mangaId", authenticate, updateLibrary);
-router.delete("/:mangaId", authenticate, deleteLibrary);
+router.use(authenticate);
+
+router.get("/", getLibrary);
+router.post("/", createLibrary);
+router.patch("/:mangaId", updateLibrary);
+router.delete("/:mangaId", deleteLibrary);
 
 export default router;

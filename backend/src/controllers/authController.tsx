@@ -1,257 +1,106 @@
-import "dotenv/config";
-import type { Request, Response, NextFunction } from "express";
-import { registerUser, loginUser, getCurrentUser, loginWithGoogle } from "../services/authService.js";
-import { registerSchema, loginSchema } from "../validators/authValidators.js";
-import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
-import { verifyRefreshToken } from "../utils/verifyRefreshToken.js";
-import { generateAccessToken } from "../utils/generateAccessToken.js" 
-import { getGoogleAuthUrl, getGoogleProfile } from "../providers/googleAuthProvider.js";
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { string, success } from "zod";
-import { findUserById, incrementUserTokenVersion } from "../repositories/userRepository.js";
+import type { Request, Response } from "express";
+import { env, isProduction } from "../config/env.js";
+import { toOwnUser } from "../dtos/userDto.js";
+import { getGoogleAuthUrl, getGoogleProfile } from "../providers/googleAuthProvider.js";
+import { loginUser, loginWithGoogle, logoutSession, refreshSession, registerUser } from "../services/authService.js";
+import { AppError } from "../utils/appError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { clearRefreshCookie, REFRESH_COOKIE_NAME, setRefreshCookie } from "../utils/refreshCookie.js";
+import { sendSuccess } from "../utils/response.js";
+import { loginSchema, registerSchema } from "../validators/authValidators.js";
 
-export const register = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const response = registerSchema.safeParse(req.body);
+const OAUTH_STATE_COOKIE = "weebspace_oauth_state";
 
-    if(!response.success){
-        res.status(400).json({
-            message: "Validation failed",
-            error: response.error.issues
-        });
+const oauthStateCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    path: "/api/v1/auth/google/callback",
+} as const;
 
+const readRefreshToken = (req: Request): string | undefined => {
+    const fromCookie: unknown = req.cookies?.[REFRESH_COOKIE_NAME];
+    if (typeof fromCookie === "string" && fromCookie) return fromCookie;
+
+    const fromBody: unknown = req.body?.refreshToken;
+    return typeof fromBody === "string" && fromBody ? fromBody : undefined;
+};
+
+export const register = asyncHandler(async (req, res) => {
+    const user = await registerUser(registerSchema.parse(req.body));
+
+    sendSuccess(res, 201, toOwnUser(user), { message: "User registered" });
+});
+
+export const login = asyncHandler(async (req, res) => {
+    const { user, accessToken, refreshToken } = await loginUser(loginSchema.parse(req.body));
+
+    setRefreshCookie(res, refreshToken);
+
+    sendSuccess(res, 200, { accessToken, user: toOwnUser(user) }, { message: "Login successful" });
+});
+
+export const refresh = asyncHandler(async (req, res) => {
+    const refreshToken = readRefreshToken(req);
+
+    if (!refreshToken) {
+        throw new AppError("Refresh token required", 401);
+    }
+
+    sendSuccess(res, 200, { accessToken: await refreshSession(refreshToken) });
+});
+
+export const logout = asyncHandler(async (req, res) => {
+    await logoutSession(readRefreshToken(req));
+
+    clearRefreshCookie(res);
+
+    sendSuccess(res, 200, null, { message: "Logout successful" });
+});
+
+export const googleLogin = asyncHandler(async (_req, res) => {
+    const state = randomBytes(32).toString("hex");
+
+    res.cookie(OAUTH_STATE_COOKIE, state, { ...oauthStateCookieOptions, maxAge: 10 * 60 * 1000 });
+    res.redirect(getGoogleAuthUrl(state));
+});
+
+const redirectToLoginWithError = (res: Response, message: string): void => {
+    res.redirect(`${env.FRONTEND_URL}/login?error=${encodeURIComponent(message)}`);
+};
+
+export const googleCallback = asyncHandler(async (req, res) => {
+    const code = typeof req.query.code === "string" ? req.query.code : undefined;
+    const returnedState = typeof req.query.state === "string" ? req.query.state : undefined;
+    const cookieState: unknown = req.cookies?.[OAUTH_STATE_COOKIE];
+
+    res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions);
+
+    if (!code || !returnedState || typeof cookieState !== "string") {
+        redirectToLoginWithError(res, "Invalid Google sign-in response");
         return;
     }
-    try{
-        const user = await registerUser(response.data);
 
-        res.status(201).json({
-            message: "User registered",
-            user: {
-                id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                createdAt: user.createdAt
-            }
-        });
+    const returnedBuffer = Buffer.from(returnedState);
+    const cookieBuffer = Buffer.from(cookieState);
 
-    } catch(error) {
-        next(error);
-    }
-};
-
-
-export const login = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const response = loginSchema.safeParse(req.body);
-
-    if(!response.success){
-        res.status(400).json({
-            message:"Validation failed",
-            error: response.error.issues
-        });
-
+    if (returnedBuffer.length !== cookieBuffer.length || !timingSafeEqual(returnedBuffer, cookieBuffer)) {
+        redirectToLoginWithError(res, "Google sign-in could not be verified");
         return;
     }
 
-    try{
-        const {user, accessToken, refreshToken} = await loginUser(response.data);
-
-        res.status(200).json({
-            message: "Login successful",
-            accessToken,
-            refreshToken,
-            user:{
-                id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role
-            }
-        });
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const googleLogin = async(_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const state = randomBytes(32).toString("hex");
+        const { refreshToken } = await loginWithGoogle(await getGoogleProfile(code));
 
-        res.cookie("weebspace_oauth_state", state, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 10 * 60 * 1000,
-            path: "/api/v1/auth/google/callback"
-        });
-
-        res.redirect(getGoogleAuthUrl(state));
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const googleCallback = async(req: Request, res: Response, next: NextFunction) : Promise<void> => {
-    try{
-        const code = typeof req.query.code === "string" ? req.query.code : undefined;
-        const returnedState = typeof req.query.state === "string" ? req.query.state : undefined;
-
-        const cookieState: unknown = req.cookies?.weebspace_oauth_state;
-
-        res.clearCookie("weebspace_oauth_state", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/api/v1/auth/google/callback"
-        })
-
-        if(!code || !returnedState || typeof cookieState !== "string"){
-            res.status(400).json({
-                success: false,
-                message: "Invalid or incomplete Google OAuth callback"
-            });
-
-            return;
-        }
-
-        const returnedBuffer = Buffer.from(returnedState);
-        const cookieBuffer = Buffer.from(cookieState);
-
-        if(returnedBuffer.length !== cookieBuffer.length || !timingSafeEqual(returnedBuffer, cookieBuffer)){
-            res.status(400).json({
-                success: false,
-                message: "Google OAuth state validation failed",
-            });
-
-            return;
-        }
-
-        const profile = await getGoogleProfile(code);
-        const response = await loginWithGoogle(profile);
-
-        res.status(200).json({
-            success: true,
-            message: "Google authentication successful",
-            data: {
-                user: {
-                    id: response.user._id.toString(),
-                    name: response.user.name,
-                    username: response.user.username,
-                    email: response.user.email,
-                    avatar: response.user.avatar,
-                    role: response.user.role, 
-                },
-                accessToken: response.accessToken,
-                refreshToken: response.refreshToken,
-            },
-        });
-    } catch(error) {
-        next(error);
-    }
-}
-
-export const logout = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        if (!req.userId) {
-            res.status(401).json({
-                message: "Authentication required",
-            });
-            return;
-        }
-
-        await incrementUserTokenVersion(req.userId);
-
-        res.status(200).json({
-            message: "Logout successful",
-        });
+        setRefreshCookie(res, refreshToken);
+        res.redirect(`${env.FRONTEND_URL}/auth/callback`);
     } catch (error) {
-        next(error);
+        if (error instanceof AppError) {
+            redirectToLoginWithError(res, error.message);
+            return;
+        }
+
+        throw error;
     }
-};
-
-export const getMe = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try{
-
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-
-            return;
-        }
-
-        const user = await getCurrentUser(req.userId!);
-
-        if(!user){
-            res.status(404).json({
-                message: "User not found"
-            });
-
-            return;
-        }
-
-        res.status(200).json({
-            user: {
-                id: user._id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                createdAt: user.createdAt,
-            }
-        });
-        
-        
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const refresh = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
-        const refreshToken = req.body.refreshToken;
-    
-        if(!refreshToken){
-            res.status(401).json({
-                message: "Refresh token required"
-            });
-    
-            return;
-        }
-
-        const decoded = verifyRefreshToken(refreshToken);
-        const user = await findUserById(decoded.userId);
-
-        if(!user || user.tokenVersion !== decoded.tokenVersion){
-            res.status(401).json({
-                message: "Refresh token is no longer valid"
-            });
-
-            return;
-        }
-
-        const accessToken = generateAccessToken( user._id.toString());
-
-        res.status(200).json({
-            accessToken
-        });
-    } catch(error) {
-        if (
-            error instanceof Error &&
-            error.name === "JsonWebTokenError" ||
-            error instanceof Error &&
-            error.name === "TokenExpiredError"
-        ) {
-            res.status(401).json({
-                message: "Invalid or expired refresh token",
-            });
-            return;
-        }
-
-        next(error);
-    }   
-};
+});

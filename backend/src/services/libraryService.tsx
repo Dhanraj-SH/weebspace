@@ -1,47 +1,44 @@
 import { createLibraryEntry, deleteLibraryEntry, findLibraryByUserId, updateLibraryEntry } from "../repositories/libraryRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { CreateLibraryData, FilterStatusData, UpdateLibraryData } from "../validators/libraryValidators.js";
+import type { CreateLibraryData, LibraryQuery, UpdateLibraryData } from "../validators/libraryValidators.js";
 
-export const getLibraryByUserId = async(userId: string, status: FilterStatusData) => {
-    return await findLibraryByUserId(userId, status);
+export const getLibrary = async (userId: string, query: LibraryQuery) => {
+    return await findLibraryByUserId(userId, query);
 };
 
-export const createLibrary = async(userId: string, libraryData: CreateLibraryData) => {
-    try{
-        const manga = await findMangaById(libraryData.mangaId);
+export const addToLibrary = async (userId: string, libraryData: CreateLibraryData) => {
+    if (!(await findMangaById(libraryData.mangaId))) {
+        throw new AppError("Manga not found", 404);
+    }
 
-        if(!manga){
-            throw new AppError("Manga not found", 404);
-        }
-
+    try {
         return await createLibraryEntry(userId, libraryData);
-    } catch(error: any){
-        if(error.code === 11000){
-            throw new AppError("Manga already exists in the library", 409);
+    } catch (error) {
+        if ((error as { code?: number }).code === 11000) {
+            throw new AppError("Manga already exists in your library", 409);
         }
 
         throw error;
     }
 };
 
-export const updateLibraryById = async(userId: string, mangaId: string, libraryData: UpdateLibraryData) => {
-    const manga = await findMangaById(mangaId);
+export const updateLibraryStatus = async (userId: string, mangaId: string, libraryData: UpdateLibraryData) => {
+    const entry = await updateLibraryEntry(userId, mangaId, libraryData);
 
-    if(!manga){
-        throw new AppError("Manga not found", 404);
+    if (!entry) {
+        throw new AppError("Manga is not in your library", 404);
     }
 
-    return await updateLibraryEntry(userId, mangaId, libraryData);
-}
+    return entry;
+};
 
-export const deleteLibraryById = async(userId: string, mangaId: string) => {
+export const removeFromLibrary = async (userId: string, mangaId: string) => {
+    const entry = await deleteLibraryEntry(userId, mangaId);
 
-    const manga = await findMangaById(mangaId);
-
-    if(!manga){
-        throw new AppError("Manga not found", 404);
+    if (!entry) {
+        throw new AppError("Manga is not in your library", 404);
     }
 
-    return await deleteLibraryEntry(userId, mangaId);
+    return entry;
 };

@@ -1,16 +1,6 @@
-import 'dotenv/config';
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
+import { env } from "../config/env.js";
 
 export const generateAccessToken = (userId: string): string => {
-    const secret = process.env.JWT_ACCESS_SECRET;
-
-    if(!secret){
-        throw new Error("JJWT_ACCESS_SECRET is not configured")
-    }
-
-    return jwt.sign(
-        {userId},
-        secret,
-        {expiresIn:"15m"}
-    );
+    return jwt.sign({ userId }, env.JWT_ACCESS_SECRET, { algorithm: "HS256", expiresIn: "15m" });
 };

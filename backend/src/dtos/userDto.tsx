@@ -13,3 +13,8 @@ export const toOwnUser = (user: IUser) => ({
     email: user.email,
     role: user.role,
 });
+
+export const toAdminUser = (user: IUser) => ({
+    ...toOwnUser(user),
+    updatedAt: user.updatedAt,
+});

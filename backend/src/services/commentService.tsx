@@ -1,11 +1,13 @@
 import { findChapterById } from "../repositories/chapterRepository.js";
-import { createCommentByChapterId, createCommentByMangaId, deleteCommentById, findCommentById, getCommentByChapterId, getCommentByMangaId, updateCommentById } from "../repositories/commentRepository.js";
+import { countReplies, createComment, findCommentById, findThreadedComments, hardDeleteComment, softDeleteComment, updateCommentContent } from "../repositories/commentRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
+import type { IComment } from "../models/commentModel.js";
 import { AppError } from "../utils/appError.js";
-import type { CreateCommentData, UpdateCommentData } from "../validators/commetValidators.js";
+import type { PaginationInput } from "../utils/pagination.js";
+import type { CreateCommentData, UpdateCommentData } from "../validators/commentValidators.js";
+import { hasModeratorRights } from "./permissionService.js";
 
-const validateReplyParent = async(parentCommentId: string | undefined,mangaId: string, chapterId?: string) => {
-
+const validateReplyParent = async (parentCommentId: string | undefined, mangaId: string, chapterId?: string): Promise<void> => {
     if (!parentCommentId) return;
 
     const parent = await findCommentById(parentCommentId);
@@ -18,70 +20,118 @@ const validateReplyParent = async(parentCommentId: string | undefined,mangaId: s
         throw new AppError("Parent comment belongs to a different manga", 400);
     }
 
-    const parentChapterId = parent.chapterId?.toString() ?? null;
-    const replyChapterId = chapterId ?? null;
-
-    if (parentChapterId !== replyChapterId) {
+    if ((parent.chapterId?.toString() ?? null) !== (chapterId ?? null)) {
         throw new AppError("Parent comment belongs to a different chapter", 400);
     }
 
     if (parent.parentCommentId) {
         throw new AppError("Replies can only be one level deep", 400);
     }
+
+    if (parent.deletedAt) {
+        throw new AppError("You cannot reply to a deleted comment", 400);
+    }
 };
 
-export const createCommentService = async(userId: string, mangaId: string, commentData: CreateCommentData) => {
+const getExistingManga = async (mangaId: string) => {
     const manga = await findMangaById(mangaId);
 
-    if(!manga){
+    if (!manga) {
         throw new AppError("Manga not found", 404);
     }
 
-    await validateReplyParent( commentData.parentCommentId, mangaId );
-
-    return await createCommentByMangaId(userId, mangaId, commentData);
+    return manga;
 };
 
-export const getCommentByMangaService = async(mangaId: string) => {
-    const manga = await findMangaById(mangaId);
-
-    if(!manga){
-        throw new AppError("Manga not found", 404);
-    }
-
-    return await getCommentByMangaId(mangaId);
-};
-
-export const createCommentByChapterService = async(userId: string, chapterId: string, commentData: CreateCommentData) => {
+const getExistingChapter = async (chapterId: string) => {
     const chapter = await findChapterById(chapterId);
 
-    if(!chapter){
+    if (!chapter) {
         throw new AppError("Chapter not found", 404);
     }
 
-    const mangaId = chapter.mangaId.toString();
+    return chapter;
+};
 
-    const manga = await findMangaById(mangaId);
+const getExistingComment = async (commentId: string): Promise<IComment> => {
+    const comment = await findCommentById(commentId);
 
-    if(!manga){
-        throw new AppError("Manga not found", 404);
+    if (!comment) {
+        throw new AppError("Comment not found", 404);
     }
 
-    await validateReplyParent( commentData.parentCommentId, mangaId, chapterId );
-
-    return await createCommentByChapterId(userId, mangaId, chapterId, commentData);
+    return comment;
 };
 
+export const createMangaCommentService = async (userId: string, mangaId: string, commentData: CreateCommentData) => {
+    await getExistingManga(mangaId);
+    await validateReplyParent(commentData.parentCommentId, mangaId);
 
-
-export const getCommentByChapterService = async(chapterId: string) => {
-    return await getCommentByChapterId(chapterId);
+    return await createComment(userId, mangaId, undefined, commentData);
 };
 
-export const updateCommentService = async(userId: string, commentId: string, commentData: UpdateCommentData) => {
-    return await updateCommentById(userId, commentId, commentData);
+export const createChapterCommentService = async (userId: string, chapterId: string, commentData: CreateCommentData) => {
+    const chapter = await getExistingChapter(chapterId);
+    const mangaId = chapter.mangaId.toString();
+
+    await validateReplyParent(commentData.parentCommentId, mangaId, chapterId);
+
+    return await createComment(userId, mangaId, chapterId, commentData);
 };
 
-export const deleteCommentService = async(userId: string, commentId: string) => {
-    return await deleteCommentById(userId, commentId);
-}
+export const getMangaCommentsService = async (mangaId: string, pagination: PaginationInput) => {
+    await getExistingManga(mangaId);
+
+    return await findThreadedComments({ mangaId }, pagination);
+};
+
+export const getChapterCommentsService = async (chapterId: string, pagination: PaginationInput) => {
+    await getExistingChapter(chapterId);
+
+    return await findThreadedComments({ chapterId }, pagination);
+};
+
+export const updateCommentService = async (userId: string, commentId: string, commentData: UpdateCommentData) => {
+    const comment = await getExistingComment(commentId);
+
+    if (comment.userId.toString() !== userId) {
+        throw new AppError("You can only edit your own comment", 403);
+    }
+
+    if (comment.deletedAt) {
+        throw new AppError("A deleted comment cannot be edited", 400);
+    }
+
+    const updated = await updateCommentContent(commentId, commentData.content);
+
+    if (!updated) {
+        throw new AppError("Comment not found", 404);
+    }
+
+    return updated;
+};
+
+export const deleteCommentService = async (userId: string, commentId: string) => {
+    const comment = await getExistingComment(commentId);
+
+    if (comment.userId.toString() !== userId && !(await hasModeratorRights(userId))) {
+        throw new AppError("You are not allowed to delete this comment", 403);
+    }
+
+    if ((await countReplies(commentId)) > 0) {
+        return await softDeleteComment(commentId);
+    }
+
+    const deleted = await hardDeleteComment(commentId);
+
+    if (comment.parentCommentId) {
+        const parentId = comment.parentCommentId.toString();
+        const parent = await findCommentById(parentId);
+
+        if (parent?.deletedAt && (await countReplies(parentId)) === 0) {
+            await hardDeleteComment(parentId);
+        }
+    }
+
+    return deleted;
+};

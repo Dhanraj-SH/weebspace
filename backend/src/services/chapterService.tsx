@@ -1,53 +1,77 @@
-import { findChapterById, findChapterByMangaId, createChapter as createChapterRepository, updateChapterById, deleteChapterById } from "../repositories/chapterRepository.js";
+import { findChapterById, findChaptersByMangaId, createChapter as createChapterRepository, updateChapterById, deleteChapterById, findAdjacentChapterIds } from "../repositories/chapterRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
+import { deleteManyReadingProgressByChapterId } from "../repositories/readingProgressRepository.js";
+import { deleteManyCommentsByChapterId } from "../repositories/commentRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateChapterData, UpdateChapterData } from "../validators/chapterValidator.js";
 
-export const getChaptersByMangaId = async(mangaId: string) => {
-    const manga = await findMangaById(mangaId);
+const CHAPTER_NUMBER_EXISTS = "Chapter number already exists in this manga";
 
-    if (!manga) {
-    throw new AppError("Manga not found", 404);
+const isDuplicateKeyError = (error: unknown): boolean => (error as { code?: number }).code === 11000;
+
+export const getChaptersByMangaId = async (mangaId: string) => {
+    if (!(await findMangaById(mangaId))) {
+        throw new AppError("Manga not found", 404);
     }
 
-    return await findChapterByMangaId(mangaId);
+    return await findChaptersByMangaId(mangaId);
 };
 
-export const getChapterById = async(chapterId: string) => {
-    return await findChapterById(chapterId);
+export const getChapterById = async (chapterId: string) => {
+    const chapter = await findChapterById(chapterId);
+
+    if (!chapter) {
+        throw new AppError("Chapter not found", 404);
+    }
+
+    const adjacent = await findAdjacentChapterIds(chapter.mangaId.toString(), chapter.chapterNumber);
+
+    return { ...chapter.toObject(), ...adjacent };
 };
 
-export const createChapter = async(mangaId: string, chapterData: CreateChapterData) => {
+export const createChapter = async (mangaId: string, chapterData: CreateChapterData) => {
+    if (!(await findMangaById(mangaId))) {
+        throw new AppError("Manga not found", 404);
+    }
+
     try {
-        const manga = await findMangaById(mangaId);
-
-        if(!manga){
-            throw new AppError("Manga not found", 404);
-        }
-
         return await createChapterRepository(mangaId, chapterData);
-    } catch(error: any) {
-        if(error.code === 11000){
-            throw new AppError("Chapter number already exists in the manga", 409);
+    } catch (error) {
+        if (isDuplicateKeyError(error)) {
+            throw new AppError(CHAPTER_NUMBER_EXISTS, 409);
         }
 
         throw error;
     }
 };
 
-export const updateChapter = async(chapterId: string, chapterData: UpdateChapterData) => {
+export const updateChapter = async (chapterId: string, chapterData: UpdateChapterData) => {
     try {
-        return await updateChapterById(chapterId, chapterData);
-    } catch(error: any) {
-        if(error.code === 11000){
-            throw new AppError("Chapter number already exists in the manga", 409);
+        const chapter = await updateChapterById(chapterId, chapterData);
+
+        if (!chapter) {
+            throw new AppError("Chapter not found", 404);
+        }
+
+        return chapter;
+    } catch (error) {
+        if (isDuplicateKeyError(error)) {
+            throw new AppError(CHAPTER_NUMBER_EXISTS, 409);
         }
 
         throw error;
     }
 };
 
+export const deleteChapter = async (chapterId: string) => {
+    const chapter = await deleteChapterById(chapterId);
 
-export const deleteChapter = async(chapterId: string) => {
-    return await deleteChapterById(chapterId);
+    if (!chapter) {
+        throw new AppError("Chapter not found", 404);
+    }
+
+    await deleteManyReadingProgressByChapterId(chapterId);
+    await deleteManyCommentsByChapterId(chapterId);
+
+    return chapter;
 };

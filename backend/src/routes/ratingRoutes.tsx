@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { getRating, removeRating, saveRating } from "../controllers/ratingController.js";
+import { getMyRating, getRatingSummary, removeRating, saveRating } from "../controllers/ratingController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/:mangaId/ratings", authenticate, getRating);
-router.put("/:mangaId/ratings", authenticate, saveRating);
-router.delete("/:mangaId/ratings", authenticate, removeRating);
+router.get("/:mangaId/ratings", getRatingSummary);
+router.get("/:mangaId/ratings/me", authenticate, getMyRating);
+router.put("/:mangaId/ratings/me", authenticate, saveRating);
+router.delete("/:mangaId/ratings/me", authenticate, removeRating);
 
 export default router;

@@ -1,13 +1,13 @@
-import { Router } from 'express';
-import { getMe, getUserById, updateMyProfile, updateUserById } from '../controllers/userController.js';
-import { authenticate } from '../middleware/authMiddleware.js';
+import { Router } from "express";
+import { getMe, getUserById, updateMe } from "../controllers/userController.js";
+import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/me", authenticate, getMe);
-router.patch("/me", authenticate, updateMyProfile);
+router.use(authenticate);
 
-router.get("/:userId", authenticate, getUserById);
-router.patch("/:userId",authenticate, updateUserById);
+router.get("/me", getMe);
+router.patch("/me", updateMe);
+router.get("/:userId", getUserById);
 
 export default router;

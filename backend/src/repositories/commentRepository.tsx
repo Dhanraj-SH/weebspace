@@ -1,81 +1,79 @@
+import mongoose from "mongoose";
 import { Comment, type IComment } from "../models/commentModel.js";
-import type { CreateCommentData, UpdateCommentData } from "../validators/commetValidators.js";
+import type { CreateCommentData } from "../validators/commentValidators.js";
+import { buildPaginationMeta, getSkip, type PaginationInput } from "../utils/pagination.js";
 
-export const findCommentById = async(commmentId: string): Promise<IComment | null> => {
-    return await Comment.findById(commmentId);
-}
+export const DELETED_COMMENT_TEXT = "[deleted]";
 
-export const createCommentByMangaId = async(userId: string, mangaId: string, commentData: CreateCommentData): Promise<IComment | null> => {
-    const { parentCommentId, ...commentFields } = commentData;
+export const findCommentById = async (commentId: string): Promise<IComment | null> => {
+    return await Comment.findById(commentId);
+};
 
+export const createComment = async (
+    userId: string,
+    mangaId: string,
+    chapterId: string | undefined,
+    commentData: CreateCommentData
+): Promise<IComment> => {
     return await Comment.create({
         userId,
         mangaId,
-        ...commentFields,
-        ...(parentCommentId ? { parentCommentId } : {})
+        content: commentData.content,
+        ...(chapterId ? { chapterId } : {}),
+        ...(commentData.parentCommentId ? { parentCommentId: commentData.parentCommentId } : {}),
     });
 };
 
-export const getCommentByMangaId = async(mangaId: string): Promise<IComment[] | null> => {
-    return await Comment.find({mangaId, chapterId: null}).sort({createdAt: -1});
+type CommentScope = { mangaId: string } | { chapterId: string };
+
+export const findThreadedComments = async (scope: CommentScope, pagination: PaginationInput) => {
+    const filter = "chapterId" in scope
+        ? { chapterId: scope.chapterId, parentCommentId: null }
+        : { mangaId: scope.mangaId, chapterId: null, parentCommentId: null };
+
+    const [topLevel, total] = await Promise.all([
+        Comment.find(filter).sort({ createdAt: -1 }).skip(getSkip(pagination)).limit(pagination.limit).lean(),
+        Comment.countDocuments(filter),
+    ]);
+
+    const replies = topLevel.length === 0
+        ? []
+        : await Comment.find({ parentCommentId: { $in: topLevel.map((comment) => comment._id) } })
+            .sort({ createdAt: 1 })
+            .lean();
+
+    const comments = topLevel.map((comment) => ({
+        ...comment,
+        replies: replies.filter((reply) => reply.parentCommentId?.toString() === comment._id.toString()),
+    }));
+
+    return { comments, meta: buildPaginationMeta(pagination, total) };
 };
 
-export const createCommentByChapterId = async(userId: string, mangaId: string, chapterId: string, commentData: CreateCommentData): Promise<IComment | null> => {
-    const { parentCommentId, ...commentFields } = commentData;
-
-    return await Comment.create({
-        userId,
-        mangaId,
-        chapterId,
-        ...commentFields,
-        ...(parentCommentId ? { parentCommentId } : {})
-    });
+export const countReplies = async (commentId: string): Promise<number> => {
+    return await Comment.countDocuments({ parentCommentId: new mongoose.Types.ObjectId(commentId) });
 };
 
-export const getCommentByChapterId = async(chapterId: string): Promise<IComment[] | null> => {
-    return await Comment.find({chapterId}).sort({createdAt: -1});
+export const updateCommentContent = async (commentId: string, content: string): Promise<IComment | null> => {
+    return await Comment.findByIdAndUpdate(commentId, { $set: { content } }, { returnDocument: "after", runValidators: true });
 };
 
-export const updateCommentById = async(userId: string, commentId: string, commentData: UpdateCommentData): Promise<IComment | null> => {
-    return await Comment.findOneAndUpdate(
-        {
-            _id: commentId,
-            userId
-        },{
-            $set: commentData
-        },{
-            returnDocument: "after",
-            runValidators: true
-        }
+export const hardDeleteComment = async (commentId: string): Promise<IComment | null> => {
+    return await Comment.findByIdAndDelete(commentId);
+};
+
+export const softDeleteComment = async (commentId: string): Promise<IComment | null> => {
+    return await Comment.findByIdAndUpdate(
+        commentId,
+        { $set: { content: DELETED_COMMENT_TEXT, deletedAt: new Date() } },
+        { returnDocument: "after" }
     );
 };
 
-export const deleteCommentById = async(userId: string, commentId: string): Promise<IComment | null> => {
-    const comment = await Comment.findOne({
-        _id: commentId,
-        userId
-    });
-
-    if(!comment){
-        return null;
-    }
-
-    const deleteChild = async (parentCommentId: string): Promise<void> => {
-        const replies = await Comment.find({parentCommentId});
-        
-        for(const reply of replies) {
-            await deleteChild(reply._id.toString());
-        }
-
-        await Comment.deleteMany({parentCommentId});
-    };
-
-    await deleteChild(commentId);
-    await Comment.findByIdAndDelete(commentId);
-
-    return comment;
+export const deleteManyCommentsByMangaId = async (mangaId: string) => {
+    return await Comment.deleteMany({ mangaId });
 };
 
-export const deleteCommentByMangaId = async(mangaId: string) => {
-    return await Comment.deleteMany({ mangaId });
+export const deleteManyCommentsByChapterId = async (chapterId: string) => {
+    return await Comment.deleteMany({ chapterId });
 };

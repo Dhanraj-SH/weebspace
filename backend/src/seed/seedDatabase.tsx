@@ -1,5 +1,6 @@
-import "dotenv/config";
+import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import { env } from "../config/env.js";
 
 import { User } from "../models/userModel.js";
 import { Manga } from "../models/mangaModel.js";
@@ -8,11 +9,17 @@ import { Library } from "../models/libraryModel.js";
 import { ReadingProgress } from "../models/readingProgressModel.js";
 import { Rating } from "../models/ratingModel.js";
 import { Review } from "../models/reviewModel.js";
+import { ReviewLike } from "../models/reviewLikeModel.js";
 import { Comment } from "../models/commentModel.js";
 
 import { connection } from "../config/database.js";
 
 const seedDatabase = async (): Promise<void> => {
+    if (env.NODE_ENV === "production") {
+        console.error("Refusing to seed: NODE_ENV is production (this script deletes all data).");
+        process.exit(1);
+    }
+
     try {
         await connection();
 
@@ -26,23 +33,36 @@ const seedDatabase = async (): Promise<void> => {
             ReadingProgress.deleteMany({}),
             Rating.deleteMany({}),
             Review.deleteMany({}),
+            ReviewLike.deleteMany({}),
             Comment.deleteMany({}),
         ]);
 
         console.log("Existing data cleared.");
+
+        // Seeded users can log in with this password (override with SEED_PASSWORD)
+        const password = await bcrypt.hash(process.env.SEED_PASSWORD ?? "Password123!", 12);
 
         const users = await User.insertMany([
             {
                 name: "Dhanraj",
                 username: "dhanraj",
                 email: "dhanraj@weebspace.dev",
+                password,
                 role: "user",
             },
             {
                 name: "Demo User",
                 username: "demouser",
                 email: "demo@weebspace.dev",
+                password,
                 role: "user",
+            },
+            {
+                name: "Admin",
+                username: "admin",
+                email: "admin@weebspace.dev",
+                password,
+                role: "admin",
             },
         ]);
 
@@ -148,8 +168,7 @@ const seedDatabase = async (): Promise<void> => {
                 mangaId: manga[0]!._id,
                 chapterId: chapters[0]!._id,
                 pageNumber: 2,
-                completed: false,
-                lastReadAt: new Date(),
+                completed: true,
             },
         ]);
 
@@ -166,6 +185,11 @@ const seedDatabase = async (): Promise<void> => {
             },
             {
                 userId: users[0]!._id,
+                mangaId: manga[1]!._id,
+                value: 5,
+            },
+            {
+                userId: users[1]!._id,
                 mangaId: manga[1]!._id,
                 value: 5,
             },
@@ -199,14 +223,12 @@ const seedDatabase = async (): Promise<void> => {
             {
                 userId: users[0]!._id,
                 mangaId: manga[0]!._id,
-                rating: 5,
                 content:
                     "One of my favorite adventure manga. The world building is incredible.",
             },
             {
                 userId: users[1]!._id,
                 mangaId: manga[1]!._id,
-                rating: 5,
                 content:
                     "A great story with strong characters and a memorable ending.",
             },
@@ -241,8 +263,11 @@ const seedDatabase = async (): Promise<void> => {
             chapters: chapters.length,
             reviews: reviews.length,
         });
+
+        console.log("Login: admin@weebspace.dev / demo@weebspace.dev (password: SEED_PASSWORD or Password123!)");
     } catch (error) {
         console.error("Database seeding failed:", error);
+        process.exitCode = 1;
     } finally {
         await mongoose.connection.close();
         console.log("Database connection closed.");

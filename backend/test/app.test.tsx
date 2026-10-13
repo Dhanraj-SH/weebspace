@@ -28,14 +28,14 @@ describe("Express API", () => {
         const response = await request(app).get("/api/v1/users/me");
 
         expect(response.status).toBe(401);
-        expect(response.body.message).toBe("Authentication required");
+        expect(response.body.error.message).toBe("Authentication required");
     });
 
     it("rejects unauthenticated requests to admin user management", async () => {
         const response = await request(app).get("/api/v1/admin/users");
 
         expect(response.status).toBe(401);
-        expect(response.body.message).toBe("Authentication required");
+        expect(response.body.error.message).toBe("Authentication required");
     });
 
     it("rejects unauthenticated manga creation", async () => {
@@ -44,6 +44,6 @@ describe("Express API", () => {
             .send({ title: "Test Manga" });
 
         expect(response.status).toBe(401);
-        expect(response.body.message).toBe("Authentication required");
+        expect(response.body.error.message).toBe("Authentication required");
     });
 });

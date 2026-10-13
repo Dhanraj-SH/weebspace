@@ -1,69 +1,54 @@
-import mongoose, {Document, Schema} from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-export interface IReview extends Document{
-    userId: mongoose.Types.ObjectId,
-    mangaId: mongoose.Types.ObjectId,
-    rating: number,
-    content: string,
-    likes: mongoose.Types.ObjectId[];
-    likesCount: number,
-    createdAt: Date,
-    updatedAt: Date
+export interface IReview extends Document {
+    userId: mongoose.Types.ObjectId;
+    mangaId: mongoose.Types.ObjectId;
+    content: string;
+    likesCount: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const reviewSchema = new Schema<IReview>(
     {
-        userId: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: true
+        userId: { 
+            type: Schema.Types.ObjectId, 
+            ref: "User", 
+            required: true 
         },
 
-        mangaId: {
-            type: Schema.Types.ObjectId,
-            ref: "Manga",
-            required: true
+        mangaId: { 
+            type: Schema.Types.ObjectId, 
+            ref: "Manga", 
+            required: true 
         },
 
-        rating: {
-            type: Number,
-            required: true,
-            min: 1,
-            max: 5
+        content: { 
+            type: String, 
+            required: true, 
+            trim: true, 
+            minlength: 1, 
+            maxlength: 5000 
         },
 
-        content: {
-            type: String,
-            required: true,
-            trim: true,
-            minlength: 1,
-            maxlength: 500
+        likesCount: { 
+            type: Number, 
+            default: 0, 
+            min: 0 
         },
 
-        likes: [{
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            default: [],
-        }],
-
-        likesCount: {
-            type: Number,
-            default: 0,
-            min: 0
-        }
-    },{
-        timestamps: true
+    },{ 
+        timestamps: true 
     }
 );
 
-reviewSchema.index({
-    mangaId: 1,
-    createdAt: -1
-});
+reviewSchema.index(
+    { userId: 1, mangaId: 1 }, 
+    { unique: true }
+);
 
-reviewSchema.index({
-    userId: 1,
-    createdAt: -1
-});
+reviewSchema.index(
+    { mangaId: 1, createdAt: -1 }
+);
 
 export const Review = mongoose.model<IReview>("Review", reviewSchema);

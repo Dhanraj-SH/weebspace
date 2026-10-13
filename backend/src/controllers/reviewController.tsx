@@ -1,279 +1,51 @@
-import type { Request, Response, NextFunction } from "express";
-import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
+import { requireUserId, type AuthenticatedRequest } from "../middleware/authMiddleware.js";
+import { createReviewService, deleteReviewService, getReviewService, getReviewsByMangaService, likeReviewService, unlikeReviewService, updateReviewService } from "../services/reviewService.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { sendSuccess } from "../utils/response.js";
 import { mangaIdSchema } from "../validators/mangaValidators.js";
-import { createReviewSchema, reviewIdSchema, updateReviewSchema } from "../validators/reviewValidators.js";
-import { createReviewService, deleteReviewService, fetchByMangaId, fetchByReviewId, likeReviewService, unlikeReviewService, updateReviewService } from "../services/reviewService.js";
-import { isRecursiveSchema } from "zod/v4/core";
+import { createReviewSchema, reviewIdSchema, reviewListQuerySchema, updateReviewSchema } from "../validators/reviewValidators.js";
 
-export const createReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try{
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-    
-            return;
-        }
-    
-        const idResponse = mangaIdSchema.safeParse(req.params);
-    
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invalid Manga id",
-                error: idResponse.error.issues
-            });
-    
-            return;
-        }
-    
-        const response = createReviewSchema.safeParse(req.body);
-    
-        if(!response.success){
-            res.status(400).json({
-                message: "Validation required",
-                error: response.error.issues
-            });
-    
-            return;
-        }
-    
-        const review = await createReviewService(req.userId, idResponse.data.mangaId, response.data);
-    
-        res.status(201).json({
-            message: "Review created successfully",
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
+export const getReviewsByManga = asyncHandler(async (req, res) => {
+    const { mangaId } = mangaIdSchema.parse(req.params);
+    const { reviews, meta } = await getReviewsByMangaService(mangaId, reviewListQuerySchema.parse(req.query));
 
-export const getReviewByManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
+    sendSuccess(res, 200, reviews, { meta });
+});
 
-        const idResponse = mangaIdSchema.safeParse(req.params);
+export const getReview = asyncHandler(async (req, res) => {
+    const { reviewId } = reviewIdSchema.parse(req.params);
 
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invalid Manga id",
-                error: idResponse.error.issues
-            });
+    sendSuccess(res, 200, await getReviewService(reviewId));
+});
 
-            return;
-        }
+export const createReview = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const { mangaId } = mangaIdSchema.parse(req.params);
+    const review = await createReviewService(requireUserId(req), mangaId, createReviewSchema.parse(req.body));
 
-        const review = await fetchByMangaId(idResponse.data.mangaId);
+    sendSuccess(res, 201, review, { message: "Review created" });
+});
 
-        res.status(200).json({
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
+export const updateReview = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const { reviewId } = reviewIdSchema.parse(req.params);
+    const review = await updateReviewService(requireUserId(req), reviewId, updateReviewSchema.parse(req.body));
 
-export const getReview = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
+    sendSuccess(res, 200, review, { message: "Review updated" });
+});
 
-        const idResponse = reviewIdSchema.safeParse(req.params);
-    
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invalid Review Id",
-                error: idResponse.error.issues
-            });
-    
-            return;
-        }
-    
-        const review = await fetchByReviewId(idResponse.data.reviewId);
-    
-        if(!review){
-            res.status(404).json({
-                message: "Review not found"
-            });
-    
-            return;
-        }
-    
-        res.status(200).json({
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
+export const deleteReview = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const { reviewId } = reviewIdSchema.parse(req.params);
 
-export const updateReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try{
+    sendSuccess(res, 200, await deleteReviewService(requireUserId(req), reviewId), { message: "Review deleted" });
+});
 
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-    
-            return;
-        }
-    
-        const idResponse = reviewIdSchema.safeParse(req.params);
-    
-        if(!idResponse.success){
-            res.status(401).json({
-                message: "Invalid review id",
-                error: idResponse.error.issues
-            });
-    
-            return;
-        }
-    
-        const response = updateReviewSchema.safeParse(req.body);
-    
-        if(!response.success){
-            res.status(401).json({
-                message: "Validation required",
-                error: response.error.issues
-            });
-    
-            return;
-        }
+export const likeReview = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const { reviewId } = reviewIdSchema.parse(req.params);
 
-        const review = await updateReviewService(req.userId, idResponse.data.reviewId, response.data);
+    sendSuccess(res, 200, await likeReviewService(requireUserId(req), reviewId), { message: "Review liked" });
+});
 
-        if(!review){
-            res.status(404).json({
-                message: "Review not found"
-            });
+export const unlikeReview = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const { reviewId } = reviewIdSchema.parse(req.params);
 
-            return;
-        }
-
-        res.status(200).json({
-            message: "Review updated successfully",
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const deleteReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try{
-
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-    
-            return;
-        }
-    
-        const idResponse = reviewIdSchema.safeParse(req.params);
-    
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invalid manga Id",
-                error: idResponse.error.issues
-            });
-    
-            return;
-        }
-    
-        const review = await deleteReviewService(req.userId, idResponse.data.reviewId);
-    
-        if(!review){
-            res.status(404).json({
-                message: "Review not found",
-            });
-    
-            return;
-        }
-    
-        res.status(200).json({
-            message: "Review deleted successfully",
-            review
-        });
-
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const likeReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try{
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-
-            return;
-        }
-
-        const idResponse = reviewIdSchema.safeParse(req.params);
-
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invaild review Id",
-                error: idResponse.error.issues
-            });
-
-            return;
-        }
-
-        const review = await likeReviewService(req.userId, idResponse.data.reviewId);
-        
-        if(!review){
-            res.status(403).json({
-                message: "Review already liked"
-            });
-
-            return;
-        }
-
-        res.status(200).json({
-            message: "Review liked successfully",
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const unlikeReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try{
-        if(!req.userId){
-            res.status(401).json({
-                message: "Authentication required"
-            });
-
-            return;
-        }
-
-        const idResponse = reviewIdSchema.safeParse(req.params);
-
-        if(!idResponse.success){
-            res.status(400).json({
-                message: "Invaild review Id",
-                error: idResponse.error.issues
-            });
-
-            return;
-        }
-
-        const review = await unlikeReviewService(req.userId, idResponse.data.reviewId);
-        
-        if(!review){
-            res.status(403).json({
-                message: "Review not liked"
-            });
-
-            return;
-        }
-
-        res.status(200).json({
-            message: "Review unliked successfully",
-            review
-        });
-    } catch(error) {
-        next(error);
-    }
-};
+    sendSuccess(res, 200, await unlikeReviewService(requireUserId(req), reviewId), { message: "Review unliked" });
+});

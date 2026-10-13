@@ -1,102 +1,22 @@
-import type { Request, Response, NextFunction } from "express";
-import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
-import { getAllUsersService, updateUserRole } from "../services/userService.js";
-import { countAdmins, findUserById } from "../repositories/userRepository.js";
-import { UserRole } from "../models/userModel.js";
-import { updateUserRoleSchema, userIdSchema } from "../validators/userValidator.js";
+import { toAdminUser } from "../dtos/userDto.js";
+import { requireUserId, type AuthenticatedRequest } from "../middleware/authMiddleware.js";
+import { changeUserRole, listUsers } from "../services/userService.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { sendSuccess } from "../utils/response.js";
+import { adminUsersQuerySchema, updateUserRoleSchema, userIdSchema } from "../validators/userValidator.js";
 
-export const getAllUsers = async ( _req: Request, res: Response, next: NextFunction ): Promise<void> => {
-    try {
-        const users = await getAllUsersService();
+export const getAllUsers = asyncHandler(async (req, res) => {
+    const { users, meta } = await listUsers(adminUsersQuerySchema.parse(req.query));
 
-        res.status(200).json({ 
-            users 
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+    sendSuccess(res, 200, users.map(toAdminUser), { meta });
+});
 
-export const updateRole = async ( req: AuthenticatedRequest, res: Response, next: NextFunction ): Promise<void> => {
-    try {
-        if (!req.userId) {
-            res.status(401).json({
-                message: "Authentication required",
-            });
+export const updateRole = asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const actorId = requireUserId(req);
+    const { userId } = userIdSchema.parse(req.params);
+    const { role } = updateUserRoleSchema.parse(req.body);
 
-            return;
-        }
+    const user = await changeUserRole(actorId, userId, role);
 
-        const idResponse = userIdSchema.safeParse(req.params);
-
-        if (!idResponse.success) {
-            res.status(400).json({
-                message: "Invalid user ID",
-                error: idResponse.error.issues,
-            });
-
-            return;
-        }
-
-        const response = updateUserRoleSchema.safeParse(req.body);
-
-        if (!response.success) {
-            res.status(400).json({
-                message: "Invalid role",
-                error: response.error.issues,
-            });
-
-            return;
-        }
-
-        const targetUserId = idResponse.data.userId;
-        const requestedRole = response.data.role;
-
-        if ( req.userId === targetUserId && requestedRole !== UserRole.Admin ) {
-            res.status(403).json({
-                message: "You cannot demote yourself",
-            });
-
-            return;
-        }
-
-        const targetUser = await findUserById(targetUserId);
-
-        if (!targetUser) {
-            res.status(404).json({
-                message: "User not found",
-            });
-
-            return;
-        }
-
-        if ( targetUser.role === UserRole.Admin && requestedRole !== UserRole.Admin ) {
-            const adminCount = await countAdmins();
-
-            if (adminCount <= 1) {
-                res.status(409).json({
-                    message: "Cannot remove the last admin",
-                });
-
-                return;
-            }
-        }
-
-        const user = await updateUserRole( targetUserId, response.data );
-
-        if (!user) {
-            res.status(404).json({
-                message: "User not found",
-            });
-            
-            return;
-        }
-
-        res.status(200).json({
-            message: "User role updated successfully",
-            user,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+    sendSuccess(res, 200, toAdminUser(user), { message: "User role updated" });
+});

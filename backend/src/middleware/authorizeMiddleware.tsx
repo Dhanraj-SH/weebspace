@@ -2,38 +2,27 @@ import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "./authMiddleware.js";
 import { findUserById } from "../repositories/userRepository.js";
 import { UserRole } from "../models/userModel.js";
+import { AppError } from "../utils/appError.js";
 
 export const authorize = (...roles: UserRole[]) => {
-    return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-        try{
-            if(!req.userId) {
-                res.status(401).json({
-                    message: "Authentication required",
-                });
-
-                return;
+    return async (req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> => {
+        try {
+            if (!req.userId) {
+                throw new AppError("Authentication required", 401);
             }
 
             const user = await findUserById(req.userId);
 
-            if(!user) {
-                res.status(401).json({
-                    message: "User not found",
-                });
-
-                return;
+            if (!user) {
+                throw new AppError("User not found", 401);
             }
 
-            if(!roles.includes(user.role)) {
-                res.status(403).json({
-                    message: "You are not authorized to perform this action",
-                });
-
-                return;
+            if (!roles.includes(user.role)) {
+                throw new AppError("You are not authorized to perform this action", 403);
             }
 
             next();
-        } catch(error) {
+        } catch (error) {
             next(error);
         }
     };

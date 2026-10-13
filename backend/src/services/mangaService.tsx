@@ -1,46 +1,56 @@
-import { deleteMangaById, findAllManga, findMangaById, updateMangeById, createManga as createMangaRepository, searchMangaByQuery } from "../repositories/mangaRepository.js";
-import { deleteChapterByMangaId } from "../repositories/chapterRepository.js";
-import { deleteLibraryEntryById } from "../repositories/libraryRepository.js";
-import { deleteRatingByMangaId } from "../repositories/ratingRepository.js";
-import { deleteReadingProgressById } from "../repositories/readingProgessRepository.js";
+import { createManga as createMangaRepository, deleteMangaById, findMangaById, listManga as listMangaRepository, updateMangaById } from "../repositories/mangaRepository.js";
+import { deleteManyChaptersByMangaId } from "../repositories/chapterRepository.js";
+import { deleteManyLibraryEntriesByMangaId } from "../repositories/libraryRepository.js";
+import { deleteManyRatingsByMangaId } from "../repositories/ratingRepository.js";
+import { deleteManyReadingProgressByMangaId } from "../repositories/readingProgressRepository.js";
+import { deleteManyReviewsByMangaId } from "../repositories/reviewRepository.js";
+import { deleteManyCommentsByMangaId } from "../repositories/commentRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { CreateMangaData, SearchMangaQuery, UpdateMangaData } from "../validators/mangaValidators.js";
-import { deleteReviewByMangaId } from "../repositories/reviewRepository.js";
-import { deleteCommentByMangaId } from "../repositories/commentRepository.js";
+import type { CreateMangaData, ListMangaQuery, UpdateMangaData } from "../validators/mangaValidators.js";
 
-export const getAllManga = async() => {
-    return await findAllManga();
+export const listManga = async (query: ListMangaQuery) => {
+    return await listMangaRepository(query);
 };
 
-export const getMangaById = async(mangaId: string) => {
-    return await findMangaById(mangaId);
-}
-
-export const createManga = async(mangaData: CreateMangaData) => {
-    return await createMangaRepository(mangaData);
-}
-
-export const updateManga = async(mangaId: string, mangaData: UpdateMangaData) => {
-    return await updateMangeById(mangaId, mangaData);
-}
-
-export const deleteManga = async (mangaId: string) => {
+export const getMangaById = async (mangaId: string) => {
     const manga = await findMangaById(mangaId);
 
     if (!manga) {
         throw new AppError("Manga not found", 404);
     }
-    
-    await deleteChapterByMangaId(mangaId);
-    await deleteLibraryEntryById(mangaId);
-    await deleteReadingProgressById(mangaId);
-    await deleteRatingByMangaId(mangaId);
-    await deleteReviewByMangaId(mangaId);
-    await deleteCommentByMangaId(mangaId);
 
-    return await deleteMangaById(mangaId);
+    return manga;
 };
 
-export const searchMangaService = async ( query: SearchMangaQuery) => {
-    return await searchMangaByQuery(query);
-}
+export const createManga = async (mangaData: CreateMangaData) => {
+    return await createMangaRepository(mangaData);
+};
+
+export const updateManga = async (mangaId: string, mangaData: UpdateMangaData) => {
+    const manga = await updateMangaById(mangaId, mangaData);
+
+    if (!manga) {
+        throw new AppError("Manga not found", 404);
+    }
+
+    return manga;
+};
+
+export const deleteManga = async (mangaId: string) => {
+    await getMangaById(mangaId);
+
+    await deleteManyCommentsByMangaId(mangaId);
+    await deleteManyReviewsByMangaId(mangaId);
+    await deleteManyRatingsByMangaId(mangaId);
+    await deleteManyReadingProgressByMangaId(mangaId);
+    await deleteManyLibraryEntriesByMangaId(mangaId);
+    await deleteManyChaptersByMangaId(mangaId);
+
+    const manga = await deleteMangaById(mangaId);
+
+    if (!manga) {
+        throw new AppError("Manga not found", 404);
+    }
+
+    return manga;
+};

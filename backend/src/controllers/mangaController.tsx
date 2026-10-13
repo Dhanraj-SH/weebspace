@@ -1,173 +1,35 @@
-import { type Request, type Response, type NextFunction, response } from "express";
-import { getAllManga, getMangaById, createManga, updateManga, deleteManga, searchMangaService } from "../services/mangaService.js";
-import { mangaIdSchema, createMangaSchema, updateMangaSchema, searchMangaQuerySchema } from "../validators/mangaValidators.js";
-import { success } from "zod";
+import { createManga, deleteManga, getMangaById, listManga, updateManga } from "../services/mangaService.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { sendSuccess } from "../utils/response.js";
+import { createMangaSchema, listMangaQuerySchema, mangaIdSchema, updateMangaSchema } from "../validators/mangaValidators.js";
 
-export const getManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const manga = await getAllManga();
+export const getMangaList = asyncHandler(async (req, res) => {
+    const { manga, meta } = await listManga(listMangaQuerySchema.parse(req.query));
 
-        res.status(200).json({
-            manga
-        });
-    } catch(error) {
-        next(error);
-    }
-};
+    sendSuccess(res, 200, manga, { meta });
+});
 
-export const getMangaByIdController = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const response = mangaIdSchema.safeParse(req.params);
+export const getMangaDetails = asyncHandler(async (req, res) => {
+    const { mangaId } = mangaIdSchema.parse(req.params);
 
-    if(!response.success){
-        res.status(400).json({
-            message: "Invalid manga Id",
-            error: response.error.issues
-        });
+    sendSuccess(res, 200, await getMangaById(mangaId));
+});
 
-        return;
-    }
-    
-    try {
-        const manga = await getMangaById(response.data.mangaId);
+export const createMangaController = asyncHandler(async (req, res) => {
+    const manga = await createManga(createMangaSchema.parse(req.body));
 
-        if(!manga){
-            res.status(404).json({
-                message: "Manga not found"
-            });
+    sendSuccess(res, 201, manga, { message: "Manga created" });
+});
 
-            return;
-        }
+export const updateMangaController = asyncHandler(async (req, res) => {
+    const { mangaId } = mangaIdSchema.parse(req.params);
+    const manga = await updateManga(mangaId, updateMangaSchema.parse(req.body));
 
-        res.status(200).json({
-            manga
-        });
+    sendSuccess(res, 200, manga, { message: "Manga updated" });
+});
 
-    } catch(error) {
-        next(error);
-    }
-};
+export const deleteMangaController = asyncHandler(async (req, res) => {
+    const { mangaId } = mangaIdSchema.parse(req.params);
 
-export const createMangaController = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const response = createMangaSchema.safeParse(req.body);
-
-    if(!response.success){
-        res.status(400).json({
-            message: "Validation Failed",
-            error: response.error.issues
-        });
-
-        return;
-    }
-
-    try {
-        const manga = await createManga(response.data);
-
-        res.status(201).json({
-            message: "Manga created successfully",
-            manga
-        });
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const updateMangaController = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const idResponse = mangaIdSchema.safeParse(req.params);
-
-    if(!idResponse.success){
-        res.status(400).json({
-            message: "Invalid manga Id",
-            error: idResponse.error.issues
-        });
-
-        return;
-    }
-
-    const response = updateMangaSchema.safeParse(req.body);
-
-    if(!response.success){
-        res.status(400).json({
-            message: "Validation failed",
-            error: response.error.issues
-        });
-
-        return;
-    }
-
-    try {
-        const manga = await updateManga(idResponse.data.mangaId, response.data);
-
-        if(!manga){
-            res.status(404).json({
-                message: "Manga not found"
-            });
-
-            return;
-        }
-
-        res.status(200).json({
-            message: "Manga Updated successfully",
-            manga: manga
-        });
-    } catch(error) {
-        next(error);
-    }
-
-}
-
-export const deleteMangaController = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const response = mangaIdSchema.safeParse(req.params);
-
-    if(!response.success){
-        res.status(400).json({
-            message: "Invalid manga Id",
-            error: response.error.issues
-        });
-
-        return;
-    }
-
-    try {
-        const manga = await deleteManga(response.data.mangaId);
-
-        if(!manga) {
-            res.status(404).json({
-                message: "Manga not found",
-            });
-
-            return;
-        }
-
-        res.status(200).json({
-            message: "Manga deleted successfully",
-            manga: manga
-        });
-    } catch(error) {
-        next(error);
-    }
-};
-
-export const searchManga = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
-        const queryResponse = searchMangaQuerySchema.safeParse(req.query);
-        
-        if(!queryResponse.success){
-            res.status(400).json({
-                message: "Invalid search query parameters",
-                errors: queryResponse.error.issues
-            });
-
-            return;
-        }
-
-        const result = await searchMangaService(queryResponse.data);
-
-        res.status(200).json({
-            success: true,
-            data: result.manga,
-            pagination: result.pagination
-        });
-    } catch(error) {
-        next(error);
-    }
-}
+    sendSuccess(res, 200, await deleteManga(mangaId), { message: "Manga deleted" });
+});

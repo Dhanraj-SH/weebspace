@@ -1,38 +1,63 @@
 import { findMangaById } from "../repositories/mangaRepository.js";
-import { deleteRatingById, findRatingById, syncMangaRatingStats, upsertRatingById } from "../repositories/ratingRepository.js"
+import { deleteRating, findRating, getRatingDistribution, syncMangaRatingStats, upsertRating } from "../repositories/ratingRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { UpdateRatingData } from "../validators/ratingValidators.js";
 
-export const getRatingService = async(userId: string, mangaId: string) => {
-    return await findRatingById(userId, mangaId);
-};
-
-export const saveRatingService = async(userId: string, mangaId: string, ratingData: UpdateRatingData) => {
+const getExistingManga = async (mangaId: string) => {
     const manga = await findMangaById(mangaId);
 
-    if(!manga){
+    if (!manga) {
         throw new AppError("Manga not found", 404);
     }
 
-    const rating = await upsertRatingById(userId, mangaId, ratingData);
+    return manga;
+};
+
+export const getRatingSummary = async (mangaId: string) => {
+    const manga = await getExistingManga(mangaId);
+
+    return {
+        average: manga.ratingAverage,
+        count: manga.ratingCount,
+        distribution: await getRatingDistribution(mangaId),
+    };
+};
+
+export const getMyRating = async (userId: string, mangaId: string) => {
+    await getExistingManga(mangaId);
+
+    const rating = await findRating(userId, mangaId);
+
+    if (!rating) {
+        throw new AppError("You have not rated this manga", 404);
+    }
+
+    return rating;
+};
+
+export const saveMyRating = async (userId: string, mangaId: string, value: number) => {
+    await getExistingManga(mangaId);
+
+    const rating = await upsertRating(userId, mangaId, value);
+
+    if (!rating) {
+        throw new AppError("Could not save rating", 500);
+    }
 
     await syncMangaRatingStats(mangaId);
 
     return rating;
-
-
 };
 
-export const removeRatingService = async(userId: string, mangaId: string) => {
-    const manga = await findMangaById(mangaId);
+export const removeMyRating = async (userId: string, mangaId: string) => {
+    await getExistingManga(mangaId);
 
-    if(!manga){
-        throw new AppError("Manga not found", 404);
+    const rating = await deleteRating(userId, mangaId);
+
+    if (!rating) {
+        throw new AppError("You have not rated this manga", 404);
     }
-
-    const rating = await deleteRatingById(userId, mangaId);
 
     await syncMangaRatingStats(mangaId);
 
     return rating;
-}
+};

@@ -1,64 +1,62 @@
-import mongoose, {Schema, Document} from "mongoose";
-import { Chapter } from "./chapterModel.js";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface IReadingProgress extends Document{
-    userId: mongoose.Types.ObjectId,
-    mangaId: mongoose.Types.ObjectId,
-    chapterId: mongoose.Types.ObjectId,
-    pageNumber: number,
-    completed: boolean,
-    lastReadAt: Date,
-    updatedAt: Date
+export interface IReadingProgress extends Document {
+    userId: mongoose.Types.ObjectId;
+    mangaId: mongoose.Types.ObjectId;
+    chapterId: mongoose.Types.ObjectId;
+    pageNumber: number;
+    completed: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-const readingProgessSchema = new Schema<IReadingProgress>(
+const readingProgressSchema = new Schema<IReadingProgress>(
     {
-        userId: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: true
+        userId: { 
+            type: Schema.Types.ObjectId, 
+            ref: "User", 
+            required: true 
         },
 
-        mangaId: {
-            type: Schema.Types.ObjectId,
-            ref: "Manga",
-            required: true
+        mangaId: { 
+            type: Schema.Types.ObjectId, 
+            ref: "Manga", 
+            required: true 
         },
 
-        chapterId: {
-            type: Schema.Types.ObjectId,
-            ref: "Chapter",
-            required: true
+        chapterId: { 
+            type: Schema.Types.ObjectId, 
+            ref: "Chapter", 
+            required: true 
         },
 
-        pageNumber: {
-            type: Number,
-            required: true,
-            min:1
+        pageNumber: { 
+            type: Number, 
+            required: true, 
+            min: 1 
         },
 
-        completed: {
-            type: Boolean,
-            default: false
+        completed: { 
+            type: Boolean, 
+            default: false 
         },
-
-        lastReadAt: {
-            type: Date,
-            default: Date.now
-        }
-    },{
-        timestamps: true
+        
+    },{ 
+        timestamps: true 
     }
 );
 
-readingProgessSchema.index(
-    {userId: 1, mangaId: 1},
-    {unique: true}
+readingProgressSchema.index(
+    { userId: 1, mangaId: 1 }, 
+    { unique: true }
 );
 
-readingProgessSchema.index({
-    userId: 1,
-    chapterId: 1
-});
+readingProgressSchema.index(
+    { userId: 1, updatedAt: -1 }
+);
 
-export const ReadingProgress = mongoose.model<IReadingProgress>("ReadingProgress", readingProgessSchema);
+readingProgressSchema.index(
+    { chapterId: 1 }
+);
+
+export const ReadingProgress = mongoose.model<IReadingProgress>("ReadingProgress", readingProgressSchema);

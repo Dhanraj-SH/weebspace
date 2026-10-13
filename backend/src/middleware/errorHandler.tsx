@@ -2,78 +2,65 @@ import type { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { ZodError } from "zod";
 
-interface AppErrorLike extends Error {
+interface HttpErrorLike extends Error {
     statusCode?: number;
     status?: number;
     code?: string | number;
-    errors?: Record<string, unknown>;
 }
 
-export const errorHandler = ( error: Error | AppErrorLike, _req: Request, res: Response, _next: NextFunction ): void => {
+const codeForStatus = (status: number): string => {
+    switch (status) {
+        case 400: return "BAD_REQUEST";
+        case 401: return "UNAUTHORIZED";
+        case 403: return "FORBIDDEN";
+        case 404: return "NOT_FOUND";
+        case 409: return "CONFLICT";
+        case 429: return "TOO_MANY_REQUESTS";
+        default: return status >= 500 ? "INTERNAL_SERVER_ERROR" : "ERROR";
+    }
+};
 
-    if ( error instanceof SyntaxError && "body" in error ) {
-        res.status(400).json({
-            error: {
-                code: "INVALID_JSON",
-                message: "Request body contains malformed JSON",
-                details: [],
-            },
-        });
+const send = (res: Response, status: number, code: string, message: string, details: unknown[] = []): void => {
+    res.status(status).json({ error: { code, message, details } });
+};
 
+export const errorHandler = (error: HttpErrorLike, _req: Request, res: Response, _next: NextFunction): void => {
+    if (error instanceof SyntaxError && "body" in error) {
+        send(res, 400, "INVALID_JSON", "Request body contains malformed JSON");
         return;
     }
 
     if (error instanceof ZodError) {
-        res.status(400).json({
-            error: {
-                code: "VALIDATION_FAILED",
-                message: "Request validation failed",
-                details: error.issues,
-            },
-        });
-
+        send(res, 400, "VALIDATION_FAILED", "Request validation failed", error.issues);
         return;
     }
 
-    if ("code" in error && error.code === 11000) {
-        res.status(409).json({
-            error: {
-                code: "DUPLICATE_RESOURCE",
-                message: "A record with this value already exists",
-                details: [],
-            },
-        });
-
+    if (error instanceof mongoose.Error.ValidationError) {
+        send(res, 400, "VALIDATION_FAILED", "Request validation failed", Object.values(error.errors).map((e) => e.message));
         return;
     }
 
     if (error instanceof mongoose.Error.CastError) {
-        res.status(400).json({
-            error: {
-                code: "INVALID_ID",
-                message: "A supplied ID or field value is invalid",
-                details: [],
-            },
-        });
-
+        send(res, 400, "INVALID_ID", "A supplied ID or field value is invalid");
         return;
     }
 
-    const statusCode = "statusCode" in error && typeof error.statusCode === "number"
-        ? error.statusCode
-        : "status" in error && typeof error.status === "number" ? error.status : 500;
+    if (error.code === 11000) {
+        send(res, 409, "DUPLICATE_RESOURCE", "A record with this value already exists");
+        return;
+    }
 
-    const message = statusCode < 500 ? error.message : "Internal server error";
+    const status = typeof error.statusCode === "number" ? error.statusCode : typeof error.status === "number" ? error.status : 500;
 
-    res.status(statusCode).json({
-        error: {
-            code: statusCode === 401 ? "UNAUTHORIZED" : statusCode === 403
-                ? "FORBIDDEN" : statusCode === 404
-                ? "NOT_FOUND" : statusCode === 409
-                ? "CONFLICT" : statusCode === 400
-                ? "BAD_REQUEST" : "INTERNAL_SERVER_ERROR",
-            message,
-            details: [],
-        },
-    });
+    if (status >= 500) {
+        console.error(error);
+        send(res, status, codeForStatus(status), "Internal server error");
+        return;
+    }
+
+    send(res, status, codeForStatus(status), error.message);
+};
+
+export const notFoundHandler = (_req: Request, res: Response): void => {
+    send(res, 404, "NOT_FOUND", "Route not found");
 };

@@ -29,6 +29,7 @@ app.use("/api/v1/manga", ratingRoutes);
 app.use("/api/v1", reviewRoutes);
 app.use("/api/v1", commentRoutes);
 app.use("/api/v1/admin", adminRoutes);
+
 app.use(errorHandler);
 
 export default app;

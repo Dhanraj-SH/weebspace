@@ -1,6 +1,10 @@
 import { Comment, type IComment } from "../models/commentModel.js";
 import type { CreateCommentData, UpdateCommentData } from "../validators/commetValidators.js";
 
+export const findCommentById = async(commmentId: string): Promise<IComment | null> => {
+    return await Comment.findById(commmentId);
+}
+
 export const createCommentByMangaId = async(userId: string, mangaId: string, commentData: CreateCommentData): Promise<IComment | null> => {
     const { parentCommentId, ...commentFields } = commentData;
 
@@ -13,7 +17,7 @@ export const createCommentByMangaId = async(userId: string, mangaId: string, com
 };
 
 export const getCommentByMangaId = async(mangaId: string): Promise<IComment[] | null> => {
-    return await Comment.find({mangaId}).sort({createdAt: -1});
+    return await Comment.find({mangaId, chapterId: null}).sort({createdAt: -1});
 };
 
 export const createCommentByChapterId = async(userId: string, mangaId: string, chapterId: string, commentData: CreateCommentData): Promise<IComment | null> => {
@@ -73,7 +77,5 @@ export const deleteCommentById = async(userId: string, commentId: string): Promi
 };
 
 export const deleteCommentByMangaId = async(mangaId: string) => {
-    return await Comment.findOneAndDelete({
-        mangaId
-    });
+    return await Comment.deleteMany({ mangaId });
 };

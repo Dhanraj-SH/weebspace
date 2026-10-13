@@ -75,3 +75,18 @@ export const updateUserRoleById = async(userId: string, role: UpdateUserRoleData
         }
     );
 };
+
+export const promoteAdminByEmail = async (email: string): Promise<boolean> => {
+    const user = await User.findOneAndUpdate(
+        { email: email.toLowerCase().trim() },
+        { $set: { role: UserRole.Admin } },
+        { returnDocument: "after", runValidators: true }
+    );
+
+    return user !== null;
+
+};
+
+export const countAdmins = async (): Promise<number> => {
+    return User.countDocuments({ role: UserRole.Admin });
+};

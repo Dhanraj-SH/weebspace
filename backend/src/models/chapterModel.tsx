@@ -22,7 +22,7 @@ const chapterSchema = new Schema<IChapter>(
         chapterNumber: {
             type: Number,
             required: true,
-            min: 1
+            min: 0
         },
 
         title: {

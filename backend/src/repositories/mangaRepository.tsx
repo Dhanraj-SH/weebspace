@@ -1,5 +1,6 @@
 import { Manga, type IManga } from "../models/mangaModel.js";
 import type { SearchMangaQuery, UpdateMangaData } from "../validators/mangaValidators.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
 
 export const findAllManga = async(): Promise<IManga[]> => {
     return await Manga.find();
@@ -34,12 +35,14 @@ export const searchMangaByQuery = async(query: SearchMangaQuery) => {
     const { q, genre, status, page, limit, sortBy, order } = query;
     const filter: Record<string, unknown> = {};
 
-    if(q) {
+    if (q) {
+        const escapedQuery = escapeRegex(q);
+
         filter.$or = [
-            { title: { $regex: q, $options: "i" } },
-            { alternativeTitles: { $regex: q, $options: "i" } },
-            { authors: { $regex: q, $options: "i" } },
-            { artists: { $regex: q, $options: "i" } },
+            { title: { $regex: escapedQuery, $options: "i" } },
+            { alternativeTitles: { $regex: escapedQuery, $options: "i" } },
+            { authors: { $regex: escapedQuery, $options: "i" } },
+            { artists: { $regex: escapedQuery, $options: "i" } },
         ];
     }
 

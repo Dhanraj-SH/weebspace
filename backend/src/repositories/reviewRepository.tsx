@@ -40,9 +40,7 @@ export const deleteReviewById = async(userId: string, reviewId: string): Promise
 };
 
 export const deleteReviewByMangaId = async(mangaId: string) => {
-    return await Review.findOneAndDelete({
-        mangaId
-    });
+    return await Review.deleteMany({ mangaId });
 };
 
 

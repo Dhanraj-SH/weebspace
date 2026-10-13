@@ -171,6 +171,30 @@ const seedDatabase = async (): Promise<void> => {
             },
         ]);
 
+        const ratingAggregates = await Rating.aggregate([
+            {
+                $group: {
+                    _id: "$mangaId",
+                    average: { $avg: "$value" },
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        await Promise.all(
+            ratingAggregates.map((stats) =>
+                Manga.updateOne(
+                    { _id: stats._id },
+                    {
+                        $set: {
+                            ratingAverage: stats.average,
+                            ratingCount: stats.count,
+                        },
+                    }
+                )
+            )
+        );
+
         const reviews = await Review.create([
             {
                 userId: users[0]!._id,

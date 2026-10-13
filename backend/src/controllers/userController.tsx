@@ -2,6 +2,7 @@ import { getUserById as fetchUser, updateProfileById } from "../services/userSer
 import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { updateProfileSchema, userIdSchema } from "../validators/userValidator.js";
+import { toPublicUser, toOwnUser } from "../dtos/userDto.js";
 
 export const getMe = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -24,7 +25,7 @@ export const getMe = async(req: AuthenticatedRequest, res: Response, next: NextF
         }
 
         res.status(200).json({
-            user,
+            user: toOwnUser(user),
         });
     } catch(error) {
         next(error);
@@ -62,7 +63,7 @@ export const getUserById = async(req: AuthenticatedRequest, res: Response, next:
         }
 
         res.status(200).json({
-            user,
+            user: toPublicUser(user),
         });
     } catch (error) {
         next(error);
@@ -102,7 +103,7 @@ export const updateMyProfile = async(req: AuthenticatedRequest, res: Response, n
 
         res.status(200).json({
             message: "Update profile successfully",
-            user
+            user: toOwnUser(user)
         });
     } catch(error) {
         next(error);
@@ -162,7 +163,7 @@ export const updateUserById = async(req: AuthenticatedRequest, res: Response, ne
     
         res.status(200).json({
             message: "User updated successfully",
-            user,
+            user: toOwnUser(user),
         });
     } catch(error) {
         next(error);

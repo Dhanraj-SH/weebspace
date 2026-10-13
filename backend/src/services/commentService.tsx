@@ -1,8 +1,34 @@
 import { findChapterById } from "../repositories/chapterRepository.js";
-import { createCommentByChapterId, createCommentByMangaId, deleteCommentById, getCommentByChapterId, getCommentByMangaId, updateCommentById } from "../repositories/commentRepository.js";
+import { createCommentByChapterId, createCommentByMangaId, deleteCommentById, findCommentById, getCommentByChapterId, getCommentByMangaId, updateCommentById } from "../repositories/commentRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateCommentData, UpdateCommentData } from "../validators/commetValidators.js";
+
+const validateReplyParent = async(parentCommentId: string | undefined,mangaId: string, chapterId?: string) => {
+
+    if (!parentCommentId) return;
+
+    const parent = await findCommentById(parentCommentId);
+
+    if (!parent) {
+        throw new AppError("Parent comment not found", 404);
+    }
+
+    if (parent.mangaId.toString() !== mangaId) {
+        throw new AppError("Parent comment belongs to a different manga", 400);
+    }
+
+    const parentChapterId = parent.chapterId?.toString() ?? null;
+    const replyChapterId = chapterId ?? null;
+
+    if (parentChapterId !== replyChapterId) {
+        throw new AppError("Parent comment belongs to a different chapter", 400);
+    }
+
+    if (parent.parentCommentId) {
+        throw new AppError("Replies can only be one level deep", 400);
+    }
+};
 
 export const createCommentService = async(userId: string, mangaId: string, commentData: CreateCommentData) => {
     const manga = await findMangaById(mangaId);
@@ -10,6 +36,8 @@ export const createCommentService = async(userId: string, mangaId: string, comme
     if(!manga){
         throw new AppError("Manga not found", 404);
     }
+
+    await validateReplyParent( commentData.parentCommentId, mangaId );
 
     return await createCommentByMangaId(userId, mangaId, commentData);
 };
@@ -39,8 +67,12 @@ export const createCommentByChapterService = async(userId: string, chapterId: st
         throw new AppError("Manga not found", 404);
     }
 
+    await validateReplyParent( commentData.parentCommentId, mangaId, chapterId );
+
     return await createCommentByChapterId(userId, mangaId, chapterId, commentData);
 };
+
+
 
 export const getCommentByChapterService = async(chapterId: string) => {
     return await getCommentByChapterId(chapterId);

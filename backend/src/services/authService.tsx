@@ -102,7 +102,7 @@ export const loginWithGoogle = async(profile: GoogleProfile) => {
     return {
         user,
         accessToken: generateAccessToken(userId),
-        refreshToken: generateRefreshToken(userId)
+        refreshToken: generateRefreshToken(userId, user.tokenVersion)
     };
 };
 

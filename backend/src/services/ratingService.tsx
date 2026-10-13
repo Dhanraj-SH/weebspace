@@ -1,5 +1,5 @@
 import { findMangaById } from "../repositories/mangaRepository.js";
-import { deleteRatingById, findRatingById, upsertRatingById } from "../repositories/ratingRepository.js"
+import { deleteRatingById, findRatingById, syncMangaRatingStats, upsertRatingById } from "../repositories/ratingRepository.js"
 import { AppError } from "../utils/appError.js";
 import type { UpdateRatingData } from "../validators/ratingValidators.js";
 
@@ -14,7 +14,13 @@ export const saveRatingService = async(userId: string, mangaId: string, ratingDa
         throw new AppError("Manga not found", 404);
     }
 
-    return await upsertRatingById(userId, mangaId, ratingData);
+    const rating = await upsertRatingById(userId, mangaId, ratingData);
+
+    await syncMangaRatingStats(mangaId);
+
+    return rating;
+
+
 };
 
 export const removeRatingService = async(userId: string, mangaId: string) => {
@@ -24,5 +30,9 @@ export const removeRatingService = async(userId: string, mangaId: string) => {
         throw new AppError("Manga not found", 404);
     }
 
-    return await deleteRatingById(userId, mangaId);
+    const rating = await deleteRatingById(userId, mangaId);
+
+    await syncMangaRatingStats(mangaId);
+
+    return rating;
 }

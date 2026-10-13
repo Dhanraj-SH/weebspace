@@ -9,6 +9,7 @@ import progressRoutes from './routes/readingProgressRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import cors from 'cors';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -27,6 +28,7 @@ app.use("/api/v1/reading-progress", progressRoutes);
 app.use("/api/v1/manga", ratingRoutes);
 app.use("/api/v1", reviewRoutes);
 app.use("/api/v1", commentRoutes);
+app.use("/api/v1/admin", adminRoutes);
 app.use(errorHandler);
 
 export default app;

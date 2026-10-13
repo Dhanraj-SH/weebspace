@@ -1,5 +1,5 @@
-import { User, type IUser } from "../models/userModel.js";
-import type { UpdateMyProfileData } from "../validators/userValidator.js";
+import { User, UserRole, type IUser } from "../models/userModel.js";
+import type { UpdateMyProfileData, UpdateUserRoleData } from "../validators/userValidator.js";
 
 export const findUserById = async (userId: string): Promise<IUser | null> => {
     return await User.findById( userId );
@@ -57,5 +57,21 @@ export const incrementUserTokenVersion = async( userId: string): Promise<void> =
     await User.updateOne(
         { _id: userId},
         { $inc: {tokenVersion: 1}}
+    );
+};
+
+export const findAllUsers = async(): Promise<IUser[]> => {
+    return await User.find().select("-password  -tokenVersion").sort({ createdAt: -1 });
+};
+
+export const updateUserRoleById = async(userId: string, role: UpdateUserRoleData): Promise<IUser | null> => {
+    return await User.findByIdAndUpdate(
+        userId,{ 
+            $set: { role }
+        },{
+            returnDocument: "after",
+            runValidators: true,
+            projection: { password: 0, tokenVersion: 0 }
+        }
     );
 };

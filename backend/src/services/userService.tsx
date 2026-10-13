@@ -1,6 +1,6 @@
-import { findUserById, findUserByUsername, updateUserById } from "../repositories/userRepository.js";
+import { findAllUsers, findUserById, findUserByUsername, updateUserById, updateUserRoleById } from "../repositories/userRepository.js";
 import { AppError } from "../utils/appError.js";
-import type { UpdateMyProfileData } from "../validators/userValidator.js";
+import type { UpdateMyProfileData, UpdateUserRoleData } from "../validators/userValidator.js";
 
 export const getUserById = async(userId: string) => {
     return await findUserById(userId);
@@ -16,3 +16,17 @@ export const updateProfileById = async (userId: string, userData: UpdateMyProfil
     }
     return await updateUserById(userId, userData);
 };
+
+export const getAllUsersService = async() => {
+    return await findAllUsers();
+};
+
+export const updateUserRole = async (userId: string, role: UpdateUserRoleData) => {
+    const user = await findUserById(userId);
+
+    if(!user){
+        throw new AppError("User Not Found", 404);
+    }
+
+    return await updateUserRoleById(userId, role);
+}

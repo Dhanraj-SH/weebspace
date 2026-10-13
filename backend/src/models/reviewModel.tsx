@@ -5,6 +5,7 @@ export interface IReview extends Document{
     mangaId: mongoose.Types.ObjectId,
     rating: number,
     content: string,
+    likes: mongoose.Types.ObjectId[];
     likesCount: number,
     createdAt: Date,
     updatedAt: Date
@@ -38,6 +39,12 @@ const reviewSchema = new Schema<IReview>(
             minlength: 1,
             maxlength: 500
         },
+
+        likes: [{
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            default: [],
+        }],
 
         likesCount: {
             type: Number,

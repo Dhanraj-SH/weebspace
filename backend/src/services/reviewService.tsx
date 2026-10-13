@@ -1,5 +1,5 @@
 import { findMangaById } from "../repositories/mangaRepository.js";
-import { createReviewById, deleteReviewById, getReviewById, getReviewByMangaId, updateReviewById } from "../repositories/reviewRepository.js";
+import { createReviewById, deleteReviewById, findReviewById, getReviewById, getReviewByMangaId, likeReviewById, unlikeReviewById, updateReviewById } from "../repositories/reviewRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateReviewData, UpdateReviewData } from "../validators/reviewValidators.js";
 
@@ -33,4 +33,24 @@ export const updateReviewService = async(userId: string, reviewId: string, revie
 
 export const deleteReviewService = async(userId: string, reviewId: string) => {
     return await deleteReviewById(userId, reviewId);
+};
+
+export const likeReviewService = async(userId: string, reviewId: string) => {    
+    const existingReview = await findReviewById(reviewId);
+    
+    if(!existingReview){
+        throw new AppError("Review not found", 404);
+    }
+    
+    return await likeReviewById(userId, reviewId);
+};
+
+export const unlikeReviewService = async(userId: string, reviewId: string) => {
+    const existingReview = await findReviewById(reviewId);
+    
+    if(!existingReview){
+        throw new AppError("Review not found", 404);
+    }
+    
+    return await unlikeReviewById(userId, reviewId);
 };

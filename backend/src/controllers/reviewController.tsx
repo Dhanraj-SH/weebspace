@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { mangaIdSchema } from "../validators/mangaValidators.js";
 import { createReviewSchema, reviewIdSchema, updateReviewSchema } from "../validators/reviewValidators.js";
-import { createReviewService, deleteReviewService, fetchByMangaId, fetchByReviewId, updateReviewService } from "../services/reviewService.js";
+import { createReviewService, deleteReviewService, fetchByMangaId, fetchByReviewId, likeReviewService, unlikeReviewService, updateReviewService } from "../services/reviewService.js";
 import { isRecursiveSchema } from "zod/v4/core";
 
 export const createReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -193,6 +193,86 @@ export const deleteReview = async(req: AuthenticatedRequest, res: Response, next
             review
         });
 
+    } catch(error) {
+        next(error);
+    }
+};
+
+export const likeReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try{
+        if(!req.userId){
+            res.status(401).json({
+                message: "Authentication required"
+            });
+
+            return;
+        }
+
+        const idResponse = reviewIdSchema.safeParse(req.params);
+
+        if(!idResponse.success){
+            res.status(400).json({
+                message: "Invaild review Id",
+                error: idResponse.error.issues
+            });
+
+            return;
+        }
+
+        const review = await likeReviewService(req.userId, idResponse.data.reviewId);
+        
+        if(!review){
+            res.status(403).json({
+                message: "Review already liked"
+            });
+
+            return;
+        }
+
+        res.status(200).json({
+            message: "Review liked successfully",
+            review
+        });
+    } catch(error) {
+        next(error);
+    }
+};
+
+export const unlikeReview = async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try{
+        if(!req.userId){
+            res.status(401).json({
+                message: "Authentication required"
+            });
+
+            return;
+        }
+
+        const idResponse = reviewIdSchema.safeParse(req.params);
+
+        if(!idResponse.success){
+            res.status(400).json({
+                message: "Invaild review Id",
+                error: idResponse.error.issues
+            });
+
+            return;
+        }
+
+        const review = await unlikeReviewService(req.userId, idResponse.data.reviewId);
+        
+        if(!review){
+            res.status(403).json({
+                message: "Review not liked"
+            });
+
+            return;
+        }
+
+        res.status(200).json({
+            message: "Review unliked successfully",
+            review
+        });
     } catch(error) {
         next(error);
     }

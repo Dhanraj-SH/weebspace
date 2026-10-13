@@ -1,5 +1,10 @@
+import mongoose from "mongoose";
 import { Review, type IReview } from "../models/reviewModel.js";
 import type { CreateReviewData, UpdateReviewData } from "../validators/reviewValidators.js";
+
+export const findReviewById = async(reviewId: string): Promise<IReview | null> => {
+    return await Review.findById( reviewId );
+}
 
 export const createReviewById = async(userId: string, mangaId: string, reviewData: CreateReviewData): Promise<IReview> => {
     return await Review.create({userId, mangaId, ...reviewData});
@@ -38,4 +43,43 @@ export const deleteReviewByMangaId = async(mangaId: string) => {
     return await Review.findOneAndDelete({
         mangaId
     });
+};
+
+
+export const likeReviewById = async( userId: string, reviewId: string): Promise<IReview | null> => {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    return await Review.findOneAndUpdate(
+        {
+            _id: reviewId,
+            likes: { $ne: userObjectId }
+        },
+        {
+            $addToSet: { likes: userObjectId },
+            $inc: { likesCount: 1 }
+        },
+        {
+            returnDocument: "after",
+            runValidators: true
+        }
+    );
+};
+
+export const unlikeReviewById = async( userId: string, reviewId: string): Promise<IReview | null> => {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    return await Review.findOneAndUpdate(
+        {
+            _id: reviewId,
+            likes: userObjectId
+        },
+        {
+            $pull: { likes: userObjectId },
+            $inc: { likesCount: -1 }
+        },
+        {
+            returnDocument: "after",
+            runValidators: true
+        }
+    );
 };

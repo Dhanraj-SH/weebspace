@@ -17,7 +17,7 @@ const issueTokens = (user: IUser) => {
 
     return {
         user,
-        accessToken: generateAccessToken(userId),
+        accessToken: generateAccessToken(userId, user.tokenVersion),
         refreshToken: generateRefreshToken(userId, user.tokenVersion),
     };
 };
@@ -100,7 +100,7 @@ export const refreshSession = async (refreshToken: string): Promise<string> => {
         throw new AppError("Refresh token is no longer valid", 401);
     }
 
-    return generateAccessToken(user._id.toString());
+    return generateAccessToken(user._id.toString(), user.tokenVersion);
 };
 
 export const logoutSession = async (refreshToken: string | undefined): Promise<void> => {

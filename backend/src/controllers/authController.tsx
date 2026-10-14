@@ -101,6 +101,7 @@ export const googleCallback = asyncHandler(async (req, res) => {
             return;
         }
 
-        throw error;
+        console.error("Google sign-in failed:", error);
+        redirectToLoginWithError(res, "Google sign-in failed. Please try again.");
     }
 });

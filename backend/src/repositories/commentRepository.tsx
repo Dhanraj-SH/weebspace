@@ -1,9 +1,6 @@
-import mongoose from "mongoose";
 import { Comment, type IComment } from "../models/commentModel.js";
 import type { CreateCommentData } from "../validators/commentValidators.js";
 import { buildPaginationMeta, getSkip, type PaginationInput } from "../utils/pagination.js";
-
-export const DELETED_COMMENT_TEXT = "[deleted]";
 
 export const findCommentById = async (commentId: string): Promise<IComment | null> => {
     return await Comment.findById(commentId);
@@ -50,10 +47,6 @@ export const findThreadedComments = async (scope: CommentScope, pagination: Pagi
     return { comments, meta: buildPaginationMeta(pagination, total) };
 };
 
-export const countReplies = async (commentId: string): Promise<number> => {
-    return await Comment.countDocuments({ parentCommentId: new mongoose.Types.ObjectId(commentId) });
-};
-
 export const updateCommentContent = async (commentId: string, content: string): Promise<IComment | null> => {
     return await Comment.findByIdAndUpdate(commentId, { $set: { content } }, { returnDocument: "after", runValidators: true });
 };
@@ -62,12 +55,8 @@ export const hardDeleteComment = async (commentId: string): Promise<IComment | n
     return await Comment.findByIdAndDelete(commentId);
 };
 
-export const softDeleteComment = async (commentId: string): Promise<IComment | null> => {
-    return await Comment.findByIdAndUpdate(
-        commentId,
-        { $set: { content: DELETED_COMMENT_TEXT, deletedAt: new Date() } },
-        { returnDocument: "after" }
-    );
+export const deleteManyRepliesByParentId = async (parentCommentId: string) => {
+    return await Comment.deleteMany({ parentCommentId });
 };
 
 export const deleteManyCommentsByMangaId = async (mangaId: string) => {

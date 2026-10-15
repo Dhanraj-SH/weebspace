@@ -7,7 +7,6 @@ export interface IComment extends Document{
     parentCommentId?: mongoose.Types.ObjectId,
     content: string,
     likesCount: number,
-    deletedAt?: Date,
     createdAt: Date,
     updatedAt: Date
 }
@@ -48,10 +47,6 @@ const commentSchema = new Schema<IComment>(
             type: Number,
             default: 0,
             min: 0
-        },
-
-        deletedAt: {
-            type: Date
         }
     },{
         timestamps: true

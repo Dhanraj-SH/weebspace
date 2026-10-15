@@ -1,5 +1,5 @@
 import { findChapterById } from "../repositories/chapterRepository.js";
-import { countReplies, createComment, findCommentById, findThreadedComments, hardDeleteComment, softDeleteComment, updateCommentContent } from "../repositories/commentRepository.js";
+import { createComment, deleteManyRepliesByParentId, findCommentById, findThreadedComments, hardDeleteComment, updateCommentContent } from "../repositories/commentRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
 import type { IComment } from "../models/commentModel.js";
 import { AppError } from "../utils/appError.js";
@@ -28,9 +28,6 @@ const validateReplyParent = async (parentCommentId: string | undefined, mangaId:
         throw new AppError("Replies can only be one level deep", 400);
     }
 
-    if (parent.deletedAt) {
-        throw new AppError("You cannot reply to a deleted comment", 400);
-    }
 };
 
 const getExistingManga = async (mangaId: string) => {
@@ -98,10 +95,6 @@ export const updateCommentService = async (userId: string, commentId: string, co
         throw new AppError("You can only edit your own comment", 403);
     }
 
-    if (comment.deletedAt) {
-        throw new AppError("A deleted comment cannot be edited", 400);
-    }
-
     const updated = await updateCommentContent(commentId, commentData.content);
 
     if (!updated) {
@@ -118,20 +111,7 @@ export const deleteCommentService = async (userId: string, commentId: string) =>
         throw new AppError("You are not allowed to delete this comment", 403);
     }
 
-    if ((await countReplies(commentId)) > 0) {
-        return await softDeleteComment(commentId);
-    }
+    await deleteManyRepliesByParentId(commentId);
 
-    const deleted = await hardDeleteComment(commentId);
-
-    if (comment.parentCommentId) {
-        const parentId = comment.parentCommentId.toString();
-        const parent = await findCommentById(parentId);
-
-        if (parent?.deletedAt && (await countReplies(parentId)) === 0) {
-            await hardDeleteComment(parentId);
-        }
-    }
-
-    return deleted;
+    return await hardDeleteComment(commentId);
 };

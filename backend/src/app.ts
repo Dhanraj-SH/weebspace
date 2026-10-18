@@ -13,6 +13,7 @@ import mangaRoutes from "./routes/mangaRoutes.js";
 import progressRoutes from "./routes/readingProgressRoutes.js";
 import ratingRoutes from "./routes/ratingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/v1/manga", ratingRoutes);
 app.use("/api/v1/library", libraryRoutes);
 app.use("/api/v1/reading-progress", progressRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/uploads", uploadRoutes);
 
 app.use("/api/v1", chapterRoutes);
 app.use("/api/v1", reviewRoutes);

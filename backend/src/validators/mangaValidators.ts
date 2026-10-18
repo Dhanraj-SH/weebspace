@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MangaStatus, mangaGenres } from "../models/mangaModel.js";
-import { objectIdSchema, paginationSchema } from "./common.js";
+import { mediaRefSchema, objectIdSchema, paginationSchema } from "./common.js";
 
 export const mangaIdSchema = z.object({ mangaId: objectIdSchema });
 
@@ -25,7 +25,7 @@ export const updateMangaSchema = z.object({
     description: z.string().trim().min(1).optional(),
     authors: z.array(z.string().trim().min(1)).optional(),
     artists: z.array(z.string().trim().min(1)).optional(),
-    coverImage: z.url().optional(),
+    coverImage: mediaRefSchema.optional(),
     genres: genresSchema.optional(),
     status: z.enum(MangaStatus).optional(),
 });

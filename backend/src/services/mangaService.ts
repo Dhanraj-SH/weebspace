@@ -7,6 +7,8 @@ import { deleteManyReviewsByMangaId } from "../repositories/reviewRepository.js"
 import { deleteManyCommentsByMangaId } from "../repositories/commentRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateMangaData, ListMangaQuery, UpdateMangaData } from "../validators/mangaValidators.js";
+import { removeStoredFiles, verifyStoredFiles } from "./mediaService.js";
+import { mangaPrefix } from "../utils/storageKeys.js";
 
 export const listManga = async (query: ListMangaQuery) => {
     return await listMangaRepository(query);
@@ -27,6 +29,11 @@ export const createManga = async (mangaData: CreateMangaData) => {
 };
 
 export const updateManga = async (mangaId: string, mangaData: UpdateMangaData) => {
+    if (mangaData.coverImage !== undefined) {
+        await getMangaById(mangaId);
+        await verifyStoredFiles([mangaData.coverImage], `${mangaPrefix(mangaId)}cover/`);
+    }
+
     const manga = await updateMangaById(mangaId, mangaData);
 
     if (!manga) {
@@ -51,6 +58,8 @@ export const deleteManga = async (mangaId: string) => {
     if (!manga) {
         throw new AppError("Manga not found", 404);
     }
+
+    await removeStoredFiles(mangaPrefix(mangaId));
 
     return manga;
 };

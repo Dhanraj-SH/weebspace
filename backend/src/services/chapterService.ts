@@ -4,6 +4,8 @@ import { deleteManyReadingProgressByChapterId } from "../repositories/readingPro
 import { deleteManyCommentsByChapterId } from "../repositories/commentRepository.js";
 import { AppError } from "../utils/appError.js";
 import type { CreateChapterData, UpdateChapterData } from "../validators/chapterValidator.js";
+import { removeStoredFiles, verifyStoredFiles } from "./mediaService.js";
+import { chapterPrefix } from "../utils/storageKeys.js";
 
 const CHAPTER_NUMBER_EXISTS = "Chapter number already exists in this manga";
 
@@ -46,6 +48,16 @@ export const createChapter = async (mangaId: string, chapterData: CreateChapterD
 };
 
 export const updateChapter = async (chapterId: string, chapterData: UpdateChapterData) => {
+    if(chapterData.pages !== undefined) {
+        const existing = await findChapterById(chapterId);
+
+        if(!existing){
+            throw new AppError("Chapter not found", 404);
+        }
+
+        await verifyStoredFiles(chapterData.pages, chapterPrefix(existing.mangaId.toString(), chapterId));
+    }
+    
     try {
         const chapter = await updateChapterById(chapterId, chapterData);
 
@@ -72,6 +84,8 @@ export const deleteChapter = async (chapterId: string) => {
 
     await deleteManyReadingProgressByChapterId(chapterId);
     await deleteManyCommentsByChapterId(chapterId);
+
+    await removeStoredFiles(chapterPrefix(chapter.mangaId.toString(), chapterId));
 
     return chapter;
 };

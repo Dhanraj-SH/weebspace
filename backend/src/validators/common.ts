@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { STORAGE_KEY_PATTERN } from "../utils/storageKeys.js";
 
 export const objectIdSchema = z
     .string()
@@ -17,3 +18,5 @@ export const usernameSchema = z
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9_]{3,20}$/, "Username must be 3-20 characters: letters, numbers, underscore");
+
+export const mediaRefSchema = z.union([z.url(), z.string().regex(STORAGE_KEY_PATTERN, "Invalid file key")]);

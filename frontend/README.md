@@ -1,32 +1,26 @@
-# React + TypeScript + Vite
+# Weebspace frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React, Vite, and TypeScript frontend for the Weebspace API. The app uses React Router for page routes, TanStack Query for server state, and a typed API layer.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Start the backend on port `3000`.
+2. Copy `.env.example` to `.env.local` if your API uses a different URL.
+3. From this directory, run `npm install` and `npm run dev`.
 
-## React Compiler
+The Vite app runs at `http://localhost:5173`. The backend `FRONTEND_URL` and `CORS_ORIGINS` should include that exact origin. Browser uploads also need the same origin in the Cloudflare R2 bucket CORS policy.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Architecture
 
-## Expanding the Oxlint configuration
+- `src/app`: app-level providers and query configuration.
+- `src/components`: shared layout, route guards, feedback, pagination, and manga cards.
+- `src/features`: auth, manga, reader, library, profile, and admin screens grouped by domain.
+- `src/lib/api.ts`: typed API contracts, response envelopes, refresh-cookie flow, and endpoint methods.
+- `src/App.tsx`: route composition.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Access tokens remain in memory. On startup the app calls `/auth/refresh`, then `/auth/me`; API requests include cookies and a bearer token. A failed refresh clears the session and protected routes return to sign-in.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+## Routes
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`/` browse · `/login` · `/register` · `/auth/callback` · `/manga/:mangaId` · `/read/:chapterId` · `/library` · `/profile` · `/admin/manga` · `/admin/manga/:mangaId/chapters` · `/admin/users`
+

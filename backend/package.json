@@ -7,7 +7,7 @@
     "dev": "npx tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "seed": "npx tsx src/seed/seedDatabase.tsx",
+    "seed": "npx tsx src/seed/seedDatabase.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -24,7 +24,7 @@ const startServer = async (): Promise<void> => {
     await connection();
     await bootstrapAdmin();
 
-    app.listen(env.PORT, () => {
+    app.listen(env.PORT, "0.0.0.0", () => {
         console.log(`Server running on port ${env.PORT}`);
     });
 };

@@ -16,7 +16,7 @@ export const createUploadUrl = async (key: string, contentType: string, size: nu
             ContentLength: size
         }),{
             expiresIn: UPLOAD_URL_EXPIRES_IN,
-            signableHeaders: new Set(["content-type", "content-length"])
+            signableHeaders: new Set(["content-type", "content-length"]),
         }
     );
 };
@@ -55,34 +55,25 @@ export const deleteObject = async(key: string):Promise<void> => {
     );
 };
 
-export const deleteByPrefix = async(prefix: string): Promise<void> => {
+export const deleteByPrefix = async (prefix: string): Promise<void> => {
     const { client, bucket } = getR2();
-
-    let contiuationToken: string | undefined;
+    let continuationToken: string | undefined;
 
     do {
         const listed = await client.send(
             new ListObjectsV2Command({
                 Bucket: bucket,
                 Prefix: prefix,
-                ...(contiuationToken ? { ContiuationToken: contiuationToken } : {}),
+                ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
             })
         );
 
-        const keys = (listed.Contents ?? []).flatMap((object) => (object.Key ? [{Key: object.Key}] : []));
+        const keys = (listed.Contents ?? []).flatMap((object) => (object.Key ? [{ Key: object.Key }] : []));
 
-        if(keys.length > 0){
-            await client.send(
-                new DeleteObjectsCommand({
-                    Bucket: bucket,
-                    Delete: {
-                        Objects: keys,
-                        Quiet: true
-                    }
-                }),
-            );
+        if (keys.length > 0) {
+            await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys, Quiet: true } }));
         }
 
-        contiuationToken = listed.IsTruncated ? listed.NextContinuationToken: undefined;
-    } while (contiuationToken);
+        continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+    } while (continuationToken);
 };

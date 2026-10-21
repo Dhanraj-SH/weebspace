@@ -6,7 +6,7 @@ export const chapterIdSchema = z.object({ chapterId: objectIdSchema });
 export const createChapterSchema = z.object({
     chapterNumber: z.number().min(0),
     title: z.string().trim().min(1).optional(),
-    pages: z.array(mediaRefSchema).default([]),
+    pages: z.array(z.url()).default([]),
     publishedAt: z.coerce.date().optional(),
 });
 

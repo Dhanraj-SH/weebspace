@@ -8,8 +8,8 @@ export const IMAGE_EXTENSIONS = {
 
 export type ImageContentType = keyof typeof IMAGE_EXTENSIONS;
 
-export const mangaPrefix = (mangaId: string): string => 'manga/${mangaId}/';
-export const chapterPrefix = (mangaId: string, chapterId: string) => 'manga/${mangaId}/chapters/${chapterId}';
+export const mangaPrefix = (mangaId: string): string => `manga/${mangaId}/`;
+export const chapterPrefix = (mangaId: string, chapterId: string) => `manga/${mangaId}/chapters/${chapterId}/`;
 
 export const buildCoverKey = (mangaId: string, contentType: ImageContentType): string => 
     `${mangaPrefix(mangaId)}cover/${randomUUID()}.${IMAGE_EXTENSIONS[contentType]}`;

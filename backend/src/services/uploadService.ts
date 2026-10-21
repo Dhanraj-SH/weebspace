@@ -4,7 +4,7 @@ import { findMangaById } from "../repositories/mangaRepository.js";
 import { AppError } from "../utils/appError.js";
 import { buildCoverKey, buildPageKey } from "../utils/storageKeys.js";
 import type { PresignUploadData } from "../validators/uploadValidators.js";
-import { resolveMediaUrl } from "../utils/mediaURL.js";
+import { resolveMediaUrl } from "../utils/mediaUrl.js";
 
 export const createPresignedUpload = async (input: PresignUploadData) => {
     if(!(await findMangaById(input.mangaId))){
@@ -33,6 +33,6 @@ export const createPresignedUpload = async (input: PresignUploadData) => {
         uploadUrl: await createUploadUrl(key, input.contentType, input.size),
         key,
         publicUrl: resolveMediaUrl(key),
-        requiredHeaders: {"Content-Type": input.contentType}
+        requiredHeaders: { "Content-Type": input.contentType },
     };
 };

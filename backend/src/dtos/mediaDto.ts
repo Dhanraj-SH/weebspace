@@ -1,4 +1,4 @@
-import { resolveMediaUrl } from "../utils/mediaURL.js";
+import { resolveMediaUrl } from "../utils/mediaUrl.js";
 
 type MayBeDocument = { toJSON? : () => unknown};
 

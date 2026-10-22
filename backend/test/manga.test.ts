@@ -179,6 +179,23 @@ describe("GET /manga/:mangaId", () => {
     });
 });
 
+describe("POST /manga/:mangaId/views", () => {
+    it("increments the view count atomically and rejects unknown or malformed ids", async () => {
+        const admin = await createAdmin();
+        const manga = await createManga(admin);
+
+        const first = await http().post(`/api/v1/manga/${manga._id}/views`);
+        const second = await http().post(`/api/v1/manga/${manga._id}/views`);
+
+        expect(first.status).toBe(200);
+        expect(first.body.data.viewCount).toBe(1);
+        expect(second.body.data.viewCount).toBe(2);
+        expect((await Manga.findById(manga._id))?.viewCount).toBe(2);
+        expect((await http().post(`/api/v1/manga/${randomId()}/views`)).status).toBe(404);
+        expect((await http().post("/api/v1/manga/123/views")).status).toBe(400);
+    });
+});
+
 describe("PATCH /manga/:mangaId", () => {
     it("updates fields, ADMIN only", async () => {
         const admin = await createAdmin();

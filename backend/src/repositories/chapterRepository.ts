@@ -9,6 +9,12 @@ export const findChapterById = async (chapterId: string): Promise<IChapter | nul
     return await Chapter.findById(chapterId);
 };
 
+export const incrementChapterViewCount = async (chapterId: string) => {
+    return await Chapter.findByIdAndUpdate(chapterId, { $inc: { viewCount: 1 } }, { returnDocument: "after" })
+        .select("viewCount")
+        .lean();
+};
+
 export const findAdjacentChapterIds = async (mangaId: string, chapterNumber: number) => {
     const [previous, next] = await Promise.all([
         Chapter.findOne({ mangaId, chapterNumber: { $lt: chapterNumber } }).sort({ chapterNumber: -1 }).select("_id"),

@@ -1,4 +1,4 @@
-import { findChapterById, findChaptersByMangaId, createChapter as createChapterRepository, updateChapterById, deleteChapterById, findAdjacentChapterIds } from "../repositories/chapterRepository.js";
+import { findChapterById, findChaptersByMangaId, createChapter as createChapterRepository, updateChapterById, deleteChapterById, findAdjacentChapterIds, incrementChapterViewCount } from "../repositories/chapterRepository.js";
 import { findMangaById } from "../repositories/mangaRepository.js";
 import { deleteManyReadingProgressByChapterId } from "../repositories/readingProgressRepository.js";
 import { deleteManyCommentsByChapterId } from "../repositories/commentRepository.js";
@@ -29,6 +29,16 @@ export const getChapterById = async (chapterId: string) => {
     const adjacent = await findAdjacentChapterIds(chapter.mangaId.toString(), chapter.chapterNumber);
 
     return { ...chapter.toObject(), ...adjacent };
+};
+
+export const recordChapterView = async (chapterId: string) => {
+    const chapter = await incrementChapterViewCount(chapterId);
+
+    if (!chapter) {
+        throw new AppError("Chapter not found", 404);
+    }
+
+    return chapter.viewCount;
 };
 
 export const createChapter = async (mangaId: string, chapterData: CreateChapterData) => {

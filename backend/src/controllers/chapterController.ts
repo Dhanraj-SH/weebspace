@@ -1,5 +1,5 @@
 import { toChapterDto } from "../dtos/mediaDto.js";
-import { createChapter, deleteChapter, getChapterById, getChaptersByMangaId, updateChapter } from "../services/chapterService.js";
+import { createChapter, deleteChapter, getChapterById, getChaptersByMangaId, recordChapterView, updateChapter } from "../services/chapterService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendSuccess } from "../utils/response.js";
 import { chapterIdSchema, createChapterSchema, updateChapterSchema } from "../validators/chapterValidator.js";
@@ -15,6 +15,12 @@ export const getChapter = asyncHandler(async (req, res) => {
     const { chapterId } = chapterIdSchema.parse(req.params);
 
     sendSuccess(res, 200, toChapterDto(await getChapterById(chapterId)));
+});
+
+export const recordChapterViewController = asyncHandler(async (req, res) => {
+    const { chapterId } = chapterIdSchema.parse(req.params);
+
+    sendSuccess(res, 200, { viewCount: await recordChapterView(chapterId) });
 });
 
 export const createChapterController = asyncHandler(async (req, res) => {

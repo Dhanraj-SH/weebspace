@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { Chapter } from "../src/models/chapterModel.js";
 import { Comment } from "../src/models/commentModel.js";
 import { ReadingProgress } from "../src/models/readingProgressModel.js";
 import { bearer, createAdmin, createChapter, createManga, createUser, http, randomId } from "./helpers/api.js";
@@ -146,6 +147,24 @@ describe("GET /chapters/:chapterId", () => {
     it("returns 404 for unknown and 400 for malformed ids", async () => {
         expect((await http().get(`/api/v1/chapters/${randomId()}`)).status).toBe(404);
         expect((await http().get("/api/v1/chapters/xyz")).status).toBe(400);
+    });
+});
+
+describe("POST /chapters/:chapterId/views", () => {
+    it("increments the chapter view count and rejects unknown or malformed ids", async () => {
+        const admin = await createAdmin();
+        const manga = await createManga(admin);
+        const chapter = await createChapter(admin, manga._id, 1);
+
+        const first = await http().post(`/api/v1/chapters/${chapter._id}/views`);
+        const second = await http().post(`/api/v1/chapters/${chapter._id}/views`);
+
+        expect(first.status).toBe(200);
+        expect(first.body.data.viewCount).toBe(1);
+        expect(second.body.data.viewCount).toBe(2);
+        expect((await Chapter.findById(chapter._id))?.viewCount).toBe(2);
+        expect((await http().post(`/api/v1/chapters/${randomId()}/views`)).status).toBe(404);
+        expect((await http().post("/api/v1/chapters/123/views")).status).toBe(400);
     });
 });
 

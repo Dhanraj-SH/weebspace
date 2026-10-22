@@ -10,6 +10,12 @@ export const findMangaById = async (mangaId: string): Promise<IManga | null> => 
     return await Manga.findById(mangaId);
 };
 
+export const incrementMangaViewCount = async (mangaId: string) => {
+    return await Manga.findByIdAndUpdate(mangaId, { $inc: { viewCount: 1 } }, { returnDocument: "after" })
+        .select("viewCount")
+        .lean();
+};
+
 export const createManga = async (mangaData: CreateMangaData): Promise<IManga> => {
     const { coverImage, ...rest } = mangaData;
 

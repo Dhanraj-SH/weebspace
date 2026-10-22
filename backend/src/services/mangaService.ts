@@ -1,4 +1,4 @@
-import { createManga as createMangaRepository, deleteMangaById, findMangaById, listManga as listMangaRepository, updateMangaById } from "../repositories/mangaRepository.js";
+import { createManga as createMangaRepository, deleteMangaById, findMangaById, incrementMangaViewCount, listManga as listMangaRepository, updateMangaById } from "../repositories/mangaRepository.js";
 import { deleteManyChaptersByMangaId } from "../repositories/chapterRepository.js";
 import { deleteManyLibraryEntriesByMangaId } from "../repositories/libraryRepository.js";
 import { deleteManyRatingsByMangaId } from "../repositories/ratingRepository.js";
@@ -22,6 +22,16 @@ export const getMangaById = async (mangaId: string) => {
     }
 
     return manga;
+};
+
+export const recordMangaView = async (mangaId: string) => {
+    const manga = await incrementMangaViewCount(mangaId);
+
+    if (!manga) {
+        throw new AppError("Manga not found", 404);
+    }
+
+    return manga.viewCount;
 };
 
 export const createManga = async (mangaData: CreateMangaData) => {

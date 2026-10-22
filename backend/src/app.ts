@@ -18,9 +18,13 @@ import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 
+// Render terminates TLS at its proxy. Trust only that first hop so Express
+// reports the original client IP to rate limiters and request handlers.
+if (env.NODE_ENV === "production") app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({
-    origin: env.CORS_ORIGINS.split(",").map((origin) => origin.trim()),
+    origin: env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean),
     credentials: true,
 }));
 app.use(express.json({ limit: "100kb" }));

@@ -1,4 +1,11 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1').replace(/\/$/, '')
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim()
+if (import.meta.env.PROD && !configuredApiUrl) {
+  throw new Error('VITE_API_URL must be configured for production builds.')
+}
+if (import.meta.env.PROD && configuredApiUrl && !configuredApiUrl.startsWith('https://')) {
+  throw new Error('VITE_API_URL must use HTTPS in production.')
+}
+const API_URL = (configuredApiUrl || 'http://localhost:3000/api/v1').replace(/\/$/, '')
 
 export type User = { id: string; name: string; username: string; email?: string; avatar?: string; role: 'user' | 'moderator' | 'admin'; createdAt: string }
 export type Manga = { _id: string; title: string; alternativeTitles: string[]; description: string; authors: string[]; artists: string[]; coverImage?: string; genres: string[]; status: 'ongoing' | 'completed' | 'hiatus'; ratingAverage: number; ratingCount: number; viewCount: number; createdAt: string }

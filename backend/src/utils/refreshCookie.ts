@@ -8,6 +8,7 @@ const baseOptions = (): CookieOptions => ({
     httpOnly: true,
     secure: isProduction || env.COOKIE_SAME_SITE === "none",
     sameSite: env.COOKIE_SAME_SITE,
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
     path: "/api/v1/auth",
 });
 

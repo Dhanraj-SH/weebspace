@@ -20,7 +20,20 @@ const envSchema = z.object({
     R2_BUCKET_NAME: z.string().min(1).optional(),
     R2_ENDPOINT: z.url().optional(),
     R2_PUBLIC_URL: z.url().optional(),
+    COOKIE_DOMAIN: z.string().optional(),
 }).superRefine((data, ctx) => {
+    if (data.NODE_ENV === "production") {
+        for (const key of ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"] as const) {
+            if (data[key].length < 32) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: `${key} must be at least 32 characters in production.`,
+                    path: [key],
+                });
+            }
+        }
+    }
+
     const r2Values = [
         data.R2_ACCOUNT_ID,
         data.R2_ENDPOINT,
@@ -36,6 +49,14 @@ const envSchema = z.object({
             code: "custom",
             message: "All R2 environment variables must be configured together.",
             path: ["R2_ENDPOINT"],
+        });
+    }
+
+    if (data.NODE_ENV === "production" && data.COOKIE_SAME_SITE !== "none" && !data.COOKIE_DOMAIN) {
+        ctx.addIssue({
+            code: "custom",
+            message: "Cross-site production deployments require COOKIE_SAME_SITE=none unless COOKIE_DOMAIN is configured for shared-site hosting.",
+            path: ["COOKIE_SAME_SITE"],
         });
     }
 });

@@ -2,7 +2,7 @@ const API_URL = '/api/v1'
 
 export type User = { id: string; name: string; username: string; email?: string; avatar?: string; role: 'user' | 'moderator' | 'admin'; createdAt: string }
 export type Manga = { _id: string; title: string; alternativeTitles: string[]; description: string; authors: string[]; artists: string[]; coverImage?: string; genres: string[]; status: 'ongoing' | 'completed' | 'hiatus'; ratingAverage: number; ratingCount: number; viewCount: number; createdAt: string }
-export type Chapter = { _id: string; mangaId: string; chapterNumber: number; title?: string; pages: string[]; publishedAt?: string; prevChapterId?: string | null; nextChapterId?: string | null }
+export type Chapter = { _id: string; mangaId: string; chapterNumber: number; title?: string; pages: string[]; viewCount: number; publishedAt?: string; prevChapterId?: string | null; nextChapterId?: string | null }
 export type Pagination = { page: number; limit: number; total: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean }
 export type Envelope<T> = { data: T; message?: string; meta?: { pagination?: Pagination } }
 export type RatingSummary = { average: number; count: number; distribution: Record<string, number> }
@@ -97,6 +97,7 @@ export const api = {
   manga: {
     list: (params: Record<string, string | number | undefined>) => request<Manga[]>(`/manga${query(params)}`),
     get: (id: string) => request<Manga>(`/manga/${id}`).then((r) => r.data),
+    recordView: (id: string) => request<{ viewCount: number }>(`/manga/${id}/views`, json('POST')),
     create: (body: Partial<Manga>) => request<Manga>('/manga', json('POST', body)).then((r) => r.data),
     update: (id: string, body: Partial<Manga>) => request<Manga>(`/manga/${id}`, json('PATCH', body)).then((r) => r.data),
     remove: (id: string) => request<Manga>(`/manga/${id}`, json('DELETE')).then((r) => r.data),
@@ -104,6 +105,7 @@ export const api = {
   },
   chapters: {
     get: (id: string) => request<Chapter>(`/chapters/${id}`).then((r) => r.data),
+    recordView: (id: string) => request<{ viewCount: number }>(`/chapters/${id}/views`, json('POST')),
     create: (mangaId: string, body: Partial<Chapter>) => request<Chapter>(`/manga/${mangaId}/chapters`, json('POST', body)).then((r) => r.data),
     update: (id: string, body: Partial<Chapter>) => request<Chapter>(`/chapters/${id}`, json('PATCH', body)).then((r) => r.data),
     remove: (id: string) => request<Chapter>(`/chapters/${id}`, json('DELETE')).then((r) => r.data),

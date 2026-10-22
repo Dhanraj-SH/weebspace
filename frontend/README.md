@@ -5,7 +5,7 @@ React, Vite, and TypeScript frontend for the Weebspace API. The app uses React R
 ## Run locally
 
 1. Start the backend on port `3000`.
-2. Copy `.env.example` to `.env.local` if your API uses a different URL.
+2. Copy `.env.example` to `.env.local` and set `VITE_API_URL` if using a different API host. The client adds `/api/v1` when it is omitted.
 3. From this directory, run `npm install` and `npm run dev`.
 
 The Vite app runs at `http://localhost:5173`. The backend `FRONTEND_URL` and `CORS_ORIGINS` should include that exact origin. Browser uploads also need the same origin in the Cloudflare R2 bucket CORS policy.
@@ -23,4 +23,3 @@ Access tokens remain in memory. On startup the app calls `/auth/refresh`, then `
 ## Routes
 
 `/` browse · `/login` · `/register` · `/auth/callback` · `/manga/:mangaId` · `/read/:chapterId` · `/library` · `/profile` · `/admin/manga` · `/admin/manga/:mangaId/chapters` · `/admin/users`
-

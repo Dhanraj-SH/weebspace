@@ -1,0 +1,139 @@
+.reader-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.reader-stage-toolbar,
+.reader-stage-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #81766d;
+  font-size: 11px;
+}
+
+.reader-stage-toolbar > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reader-stage-toolbar small {
+  color: #aaa098;
+  font-size: 10px;
+}
+
+.reader-stage-toolbar button,
+.reader-stage-controls button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #e9e0d9;
+  border-radius: 5px;
+  background: #fff;
+  color: #544a41;
+  font: inherit;
+  cursor: pointer;
+}
+
+.reader-stage-toolbar button:hover,
+.reader-stage-controls button:not(:disabled):hover {
+  border-color: #d6a28a;
+  color: #a25136;
+}
+
+.reader-stage-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.reader-stage-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 78vh;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.reader-stage-controls label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.reader-stage-controls input {
+  width: 58px;
+  height: 34px;
+  border: 1px solid #e9e0d9;
+  border-radius: 4px;
+  padding: 0 7px;
+  color: #544a41;
+  font: inherit;
+}
+
+.reader-stage:fullscreen {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  padding: 16px clamp(12px, 4vw, 48px);
+  gap: 12px;
+  background: #171514;
+  color: #f8f4ef;
+}
+
+.reader-stage:fullscreen .reader-stage-toolbar,
+.reader-stage:fullscreen .reader-stage-controls {
+  flex: none;
+  color: #f8f4ef;
+}
+
+.reader-stage:fullscreen .reader-stage-toolbar small {
+  color: #bcb4ae;
+}
+
+.reader-stage:fullscreen .reader-stage-image {
+  flex: 1;
+  width: auto;
+  min-height: 0;
+  max-width: 100%;
+  max-height: none;
+}
+
+.reader-stage:fullscreen .reader-stage-toolbar button,
+.reader-stage:fullscreen .reader-stage-controls button,
+.reader-stage:fullscreen .reader-stage-controls input {
+  border-color: #514944;
+  background: #292523;
+  color: #f8f4ef;
+}
+
+.reader-fullscreen-error {
+  color: #b53d30;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .reader-stage-controls {
+    gap: 7px;
+  }
+
+  .reader-stage-controls button {
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .reader-stage-controls input {
+    width: 48px;
+  }
+
+  .reader-stage:fullscreen {
+    padding: 10px;
+  }
+}

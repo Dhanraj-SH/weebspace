@@ -155,8 +155,21 @@ export const api = {
   uploads: {
     presign: (body: { purpose: 'cover'; mangaId: string; contentType: string; size: number } | { purpose: 'page'; mangaId: string; chapterId: string; contentType: string; size: number }) => request<{ uploadUrl: string; key: string; publicUrl: string; requiredHeaders: Record<string, string> }>('/uploads/presign', json('POST', body)).then((r) => r.data),
     put: async (url: string, file: File, headers: Record<string, string>) => {
-      const response = await fetch(url, { method: 'PUT', headers, body: file })
-      if (!response.ok) throw new Error(`Upload failed (${response.status}). Request a new upload link and try again.`)
+      let response: Response
+      try {
+        response = await fetch(url, { method: 'PUT', headers, body: file })
+      } catch (error) {
+        if (error instanceof TypeError) {
+          throw new Error('The browser could not reach Cloudflare R2. Check the bucket CORS policy allows this site origin to send PUT requests with the Content-Type header.')
+        }
+        throw error
+      }
+      if (!response.ok) {
+        const detail = await response.text()
+        const code = detail.match(/<Code>([^<]+)<\/Code>/i)?.[1]
+        const message = detail.match(/<Message>([^<]+)<\/Message>/i)?.[1]
+        throw new Error(`Cloudflare R2 upload failed (${response.status})${code ? ` ${code}` : ''}${message ? `: ${message}` : ''}. Request a new upload link and try again.`)
+      }
     },
   },
 }

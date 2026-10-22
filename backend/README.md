@@ -18,6 +18,6 @@ The Blueprint keeps refresh cookies `Secure` with `COOKIE_SAME_SITE=none` for co
 
 For Google sign-in, also set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`. Set the callback to `https://<your-render-service>.onrender.com/api/v1/auth/google/callback` and register that exact URL in Google Cloud OAuth settings.
 
-For uploads, set all of `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`, and `R2_PUBLIC_URL`. Configure the bucket's CORS policy to allow the frontend origin and `PUT` requests.
+For uploads, set all of `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`, and `R2_PUBLIC_URL`. In the R2 bucket's CORS settings, allow `PUT` from each exact frontend origin (for example, `https://weebspace.vercel.app` and `http://localhost:5173`) and allow the `Content-Type` request header. The browser uploads directly to R2 using a presigned URL; do not add `Content-Length` to the signed headers because browsers control that header.
 
 Never commit `.env`; use Render's Environment settings for production credentials. `backend/.env.example` lists the supported settings for local setup.

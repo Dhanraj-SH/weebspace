@@ -7,7 +7,7 @@ React, Vite, and TypeScript frontend for the Weebspace API. The app uses React R
 1. Copy `.env.example` to `.env.local`. It points the Vite development proxy at the hosted Render API by default.
 2. From this directory, run `npm install` and `npm run dev`.
 
-The Vite app runs at `http://localhost:5173` and proxies `/api/v1` through its dev server to `VITE_API_URL`, avoiding browser CORS errors while keeping API calls on the same origin. Set `VITE_API_URL=http://localhost:3000` only when you intentionally want to use a local backend. Production builds use the Vercel `/api/v1` rewrite to Render. Browser uploads also need the frontend origin in the Cloudflare R2 bucket CORS policy.
+The Vite app runs at `http://localhost:5173` and proxies `/api/v1` through its dev server to `VITE_API_URL`, avoiding browser CORS errors while keeping API calls on the same origin. Set `VITE_API_URL=http://localhost:3000` only when you intentionally want to use a local backend. Production builds use the Vercel `/api/v1` rewrite to Render. Browser uploads go directly to Cloudflare R2, so its bucket CORS policy must allow the exact frontend origin, `PUT`, and the `Content-Type` request header (including `http://localhost:5173` for local uploads).
 
 ## Architecture
 

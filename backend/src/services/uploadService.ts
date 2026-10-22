@@ -30,7 +30,7 @@ export const createPresignedUpload = async (input: PresignUploadData) => {
     }
 
     return {
-        uploadUrl: await createUploadUrl(key, input.contentType, input.size),
+        uploadUrl: await createUploadUrl(key, input.contentType),
         key,
         publicUrl: resolveMediaUrl(key),
         requiredHeaders: { "Content-Type": input.contentType },

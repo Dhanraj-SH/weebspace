@@ -4,7 +4,7 @@ import { getR2 } from "../config/r2.js";
 
 export const UPLOAD_URL_EXPIRES_IN = 300;
 
-export const createUploadUrl = async (key: string, contentType: string, size: number): Promise<string> => {
+export const createUploadUrl = async (key: string, contentType: string): Promise<string> => {
     const { client, bucket } = getR2();
 
     return await getSignedUrl(
@@ -13,10 +13,9 @@ export const createUploadUrl = async (key: string, contentType: string, size: nu
             Bucket: bucket,
             Key: key,
             ContentType: contentType,
-            ContentLength: size
         }),{
             expiresIn: UPLOAD_URL_EXPIRES_IN,
-            signableHeaders: new Set(["content-type", "content-length"]),
+            signableHeaders: new Set(["content-type"]),
         }
     );
 };

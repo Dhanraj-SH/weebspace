@@ -122,7 +122,7 @@ describe("presigned upload URL (real signing, fake credentials)", () => {
         vi.doUnmock("../src/config/env.js");
     });
 
-    it("signs content-type and content-length, expires in 5 minutes and has no checksum parameters", async () => {
+    it("signs content-type without requiring a browser-controlled content-length, expires in 5 minutes and has no checksum parameters", async () => {
         const { createUploadUrl } = await loadRealProvider({
             R2_ACCESS_KEY_ID: "AKIDEXAMPLE",
             R2_SECRET_ACCESS_KEY: "secretexample",
@@ -130,18 +130,18 @@ describe("presigned upload URL (real signing, fake credentials)", () => {
             R2_ENDPOINT: "https://abc123.r2.cloudflarestorage.com",
         });
 
-        const url = new URL(await createUploadUrl("manga/x/cover/a.webp", "image/webp", 12345));
+        const url = new URL(await createUploadUrl("manga/x/cover/a.webp", "image/webp"));
 
         expect(url.host.endsWith("abc123.r2.cloudflarestorage.com")).toBe(true);
         expect(url.pathname.endsWith("manga/x/cover/a.webp")).toBe(true);
         expect(url.searchParams.get("X-Amz-Expires")).toBe("300");
-        expect(url.searchParams.get("X-Amz-SignedHeaders")!.split(";").sort()).toEqual(["content-length", "content-type", "host"]);
+        expect(url.searchParams.get("X-Amz-SignedHeaders")!.split(";").sort()).toEqual(["content-type", "host"]);
         expect([...url.searchParams.keys()].filter((name) => /checksum/i.test(name))).toEqual([]);
     });
 
     it("fails with a clear error when R2 is not configured (lazy: only on first use)", async () => {
         const { createUploadUrl } = await loadRealProvider({});
 
-        await expect(createUploadUrl("k", "image/webp", 1)).rejects.toThrow("Cloudflare R2 is not configured");
+        await expect(createUploadUrl("k", "image/webp")).rejects.toThrow("Cloudflare R2 is not configured");
     });
 });

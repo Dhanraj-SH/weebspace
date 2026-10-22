@@ -38,7 +38,7 @@ describe("POST /uploads/presign", () => {
         expect(uploadUrl).toBe(`https://r2.test/upload/${key}?signature=fake`);
         expect(publicUrl).toBe(`https://media.test/${key}`);
         expect(requiredHeaders).toEqual({ "Content-Type": "image/webp" });
-        expect(createUploadUrl).toHaveBeenCalledWith(key, "image/webp", 123456);
+        expect(createUploadUrl).toHaveBeenCalledWith(key, "image/webp");
     });
 
     it.each([

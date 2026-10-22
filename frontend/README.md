@@ -4,17 +4,16 @@ React, Vite, and TypeScript frontend for the Weebspace API. The app uses React R
 
 ## Run locally
 
-1. Start the backend on port `3000`.
-2. Copy `.env.example` to `.env.local` and set `VITE_API_URL` if using a different API host. The client adds `/api/v1` when it is omitted.
-3. From this directory, run `npm install` and `npm run dev`.
+1. Copy `.env.example` to `.env.local`. It points the Vite development proxy at the hosted Render API by default.
+2. From this directory, run `npm install` and `npm run dev`.
 
-The Vite app runs at `http://localhost:5173`. The backend `FRONTEND_URL` and `CORS_ORIGINS` should include that exact origin. Browser uploads also need the same origin in the Cloudflare R2 bucket CORS policy.
+The Vite app runs at `http://localhost:5173` and proxies `/api/v1` through its dev server to `VITE_API_URL`, avoiding browser CORS errors while keeping API calls on the same origin. Set `VITE_API_URL=http://localhost:3000` only when you intentionally want to use a local backend. Production builds use the Vercel `/api/v1` rewrite to Render. Browser uploads also need the frontend origin in the Cloudflare R2 bucket CORS policy.
 
 ## Architecture
 
 - `src/app`: app-level providers and query configuration.
 - `src/components`: shared layout, route guards, feedback, pagination, and manga cards.
-- `src/features`: auth, manga, reader, library, profile, and admin screens grouped by domain.
+- `src/features`: auth, manga search and browse, reader, library, profile, and admin screens grouped by domain.
 - `src/lib/api.ts`: typed API contracts, response envelopes, refresh-cookie flow, and endpoint methods.
 - `src/App.tsx`: route composition.
 

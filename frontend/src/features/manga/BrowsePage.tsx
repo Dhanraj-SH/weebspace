@@ -1,17 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { MangaCard } from '../../components/MangaCard'
 import { PageState } from '../../components/Feedback'
 import { Pagination } from '../../components/Pagination'
 import { api } from '../../lib/api'
-
-const genres = ['action', 'actionAdventure', 'adventure', 'animation', 'awardWinning', 'boysLove', 'cars', 'comedy', 'dementia', 'demons', 'drama', 'ecchi', 'erotica', 'fantasy', 'game', 'girlsLove', 'gourmet', 'harem', 'historical', 'horror', 'isekai', 'josei', 'kids', 'magic', 'mahouShoujo', 'martialArts', 'mecha', 'military', 'music', 'mystery', 'parody', 'police', 'psychological', 'romance', 'samurai', 'school', 'sciFi', 'sciFiFantasy', 'seinen', 'shoujo', 'shoujoAi', 'shounen', 'shounenAi', 'sliceOfLife', 'space', 'sports', 'superPower', 'supernatural', 'suspense', 'thriller', 'unknown', 'vampire']
+import { formatGenre, genreOptions } from './genreOptions'
 
 function TopReadsCarousel() {
   const result = useQuery({
     queryKey: ['manga-shelf', 'reader-favorites'],
-    queryFn: () => api.manga.list({ page: 1, limit: 5, sortBy: 'ratingCount', order: 'desc' }),
+    queryFn: () => api.manga.list({ page: 1, limit: 5, sortBy: 'ratingAverage', order: 'desc' }),
   })
   const [activeIndex, setActiveIndex] = useState(0)
   const stories = result.data?.data ?? []
@@ -21,7 +20,7 @@ function TopReadsCarousel() {
 
   if (result.isError) {
     return <section className="top-reads-carousel">
-      <div className="shelf-heading"><div><span className="section-kicker">READER FAVORITES</span><h2>Stories to stay up for</h2></div></div>
+      <div className="shelf-heading"><div><span className="section-kicker">TOP RATED BY READERS</span><h2>Top reads right now</h2></div></div>
       <PageState error={result.error} action={<button className="text-link" onClick={() => void result.refetch()}>Try again →</button>}/>
     </section>
   }
@@ -30,8 +29,8 @@ function TopReadsCarousel() {
 
   return <section className="manga-shelf">
     <div className="shelf-heading">
-      <div><span className="section-kicker">READER FAVORITES</span><h2>Stories to stay up for</h2></div>
-      <Link to="/?sortBy=ratingCount#browse" className="shelf-link">Browse all <span aria-hidden="true">↗</span></Link>
+      <div><span className="section-kicker">TOP RATED BY READERS</span><h2>Top reads right now</h2></div>
+      <Link to="/?sortBy=ratingAverage#browse" className="shelf-link">Browse all <span aria-hidden="true">↗</span></Link>
     </div>
     <div className="top-reads-carousel" aria-roledescription="carousel" aria-label="Popular manga">
       {activeStory.coverImage
@@ -39,7 +38,7 @@ function TopReadsCarousel() {
         : <div className="top-reads-backdrop top-reads-backdrop-fallback" aria-hidden="true"/>}
       <div className="top-reads-overlay"/>
       <div className="top-reads-copy">
-        <span className="top-reads-label">THIS WEEK'S READER PICK</span>
+        <span className="top-reads-label">TOP RATED BY READERS</span>
         <span className="top-reads-count">{String(activeIndex + 1).padStart(2, '0')} <i>/</i> {String(stories.length).padStart(2, '0')}</span>
         <h3>{activeStory.title}</h3>
         <p>{activeStory.description}</p>
@@ -130,9 +129,12 @@ export function BrowsePage() {
   const search = params.get('q') || ''
   const genre = params.get('genre') || ''
   const status = params.get('status') || ''
-  const page = Number(params.get('page') || 1)
-  const sortBy = params.get('sortBy') || 'createdAt'
+  const requestedPage = Number(params.get('page') || 1)
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+  const requestedSort = params.get('sortBy')
+  const sortBy = requestedSort === 'ratingAverage' || requestedSort === 'title' ? requestedSort : 'createdAt'
   const [searchInput, setSearchInput] = useState(search)
+  const navigate = useNavigate()
   const result = useQuery({
     queryKey: ['manga', { search, genre, status, page, sortBy }],
     queryFn: () => api.manga.list({ q: search, genre, status, page, limit: 12, sortBy, order: sortBy === 'title' ? 'asc' : 'desc' }),
@@ -146,7 +148,8 @@ export function BrowsePage() {
   })
   function submit(event: FormEvent) {
     event.preventDefault()
-    setFilter('q', searchInput.trim())
+    const nextSearch = searchInput.trim()
+    if (nextSearch) navigate(`/search?q=${encodeURIComponent(nextSearch)}`)
   }
 
   return <main className="discover-page">
@@ -162,12 +165,12 @@ export function BrowsePage() {
         <span className="text-muted">{result.data?.meta?.pagination?.total ?? '—'} stories to explore</span>
       </div>
       <form className="search-row" onSubmit={submit}>
-        <label className="search-box"><span aria-hidden="true">⌕</span><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search titles, authors, worlds..." aria-label="Search manga"/><kbd>ENTER ↵</kbd></label>
-        <label className="sort-select"><span>Sort:</span><select value={sortBy} onChange={(event) => setFilter('sortBy', event.target.value)} aria-label="Sort manga"><option value="createdAt">Recently added</option><option value="ratingAverage">Top rated</option><option value="ratingCount">Most popular</option><option value="title">Title A–Z</option></select></label>
+        <label className="search-box"><span aria-hidden="true">⌕</span><input value={searchInput} maxLength={100} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search titles, authors, worlds..." aria-label="Search manga"/><kbd>ENTER ↵</kbd></label>
+        <label className="sort-select"><span>Sort:</span><select value={sortBy} onChange={(event) => setFilter('sortBy', event.target.value)} aria-label="Sort manga"><option value="createdAt">Recently added</option><option value="ratingAverage">Top rated</option><option value="title">Title A–Z</option></select></label>
       </form>
       <div className="genre-row">
         <button className={!genre ? 'chip selected' : 'chip'} onClick={() => setFilter('genre', '')}>All stories</button>
-        {genres.map((item) => <button key={item} className={genre === item ? 'chip selected' : 'chip'} onClick={() => setFilter('genre', genre === item ? '' : item)}>{item === 'sciFi' ? 'Sci-fi' : item.replace(/([A-Z])/g, ' $1').replace(/^./, (character) => character.toUpperCase())}</button>)}
+        {genreOptions.map((item) => <button key={item} className={genre === item ? 'chip selected' : 'chip'} onClick={() => setFilter('genre', genre === item ? '' : item)}>{formatGenre(item)}</button>)}
         <select className="status-filter" value={status} onChange={(event) => setFilter('status', event.target.value)} aria-label="Filter by status"><option value="">Any status</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="hiatus">Hiatus</option></select>
       </div>
       <div className="results-label"><span>{search || genre || status ? 'MATCHING STORIES' : 'FRESHLY ADDED'}</span><span>{result.data?.meta?.pagination ? `PAGE ${page} OF ${result.data.meta.pagination.totalPages}` : 'CURATED FOR YOU'}</span></div>

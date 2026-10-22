@@ -8,6 +8,7 @@ import { AdminUsersPage } from './features/admin/AdminUsersPage'
 import { AuthCallbackPage, AuthPage } from './features/auth/AuthPage'
 import { BrowsePage } from './features/manga/BrowsePage'
 import { MangaDetailPage } from './features/manga/MangaDetailPage'
+import { SearchPage } from './features/manga/SearchPage'
 import { LibraryPage } from './features/library/LibraryPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 import { ReaderPage } from './features/reader/ReaderPage'
@@ -22,6 +23,7 @@ export default function App() {
     <Route path="register" element={<AuthPage mode="register"/>}/>
     <Route path="auth/callback" element={<AuthCallbackPage/>}/>
     <Route path="manga/:mangaId" element={<MangaDetailPage/>}/>
+    <Route path="search" element={<SearchPage/>}/>
     <Route path="read/:chapterId" element={<ReaderRoute/>}/>
     <Route element={<RequireAuth/>}>
       <Route path="library" element={<LibraryPage/>}/>

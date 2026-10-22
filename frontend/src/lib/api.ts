@@ -1,14 +1,4 @@
-const configuredApiUrl = import.meta.env.VITE_API_URL?.trim()
-if (import.meta.env.PROD && !configuredApiUrl) {
-  throw new Error('VITE_API_URL must be configured for production builds.')
-}
-if (import.meta.env.PROD && configuredApiUrl && !configuredApiUrl.startsWith('https://')) {
-  throw new Error('VITE_API_URL must use HTTPS in production.')
-}
-const configuredApiBaseUrl = configuredApiUrl?.replace(/\/+$/, '')
-const API_URL = configuredApiBaseUrl
-  ? configuredApiBaseUrl.endsWith('/api/v1') ? configuredApiBaseUrl : `${configuredApiBaseUrl}/api/v1`
-  : 'http://localhost:3000/api/v1'
+const API_URL = '/api/v1'
 
 export type User = { id: string; name: string; username: string; email?: string; avatar?: string; role: 'user' | 'moderator' | 'admin'; createdAt: string }
 export type Manga = { _id: string; title: string; alternativeTitles: string[]; description: string; authors: string[]; artists: string[]; coverImage?: string; genres: string[]; status: 'ongoing' | 'completed' | 'hiatus'; ratingAverage: number; ratingCount: number; viewCount: number; createdAt: string }

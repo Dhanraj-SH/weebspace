@@ -140,6 +140,17 @@ describe("GET /manga (list, search, filters, pagination)", () => {
         expect(desc.body.data[0].title).toBe("Gamma Hero");
     });
 
+    it("sorts by reader rating count", async () => {
+        await Manga.updateOne({ title: "Alpha Hero" }, { $set: { ratingCount: 2 } });
+        await Manga.updateOne({ title: "Beta Romance" }, { $set: { ratingCount: 8 } });
+        await Manga.updateOne({ title: "Gamma Hero" }, { $set: { ratingCount: 4 } });
+
+        const response = await http().get("/api/v1/manga?sortBy=ratingCount&order=desc");
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.map((manga: { title: string }) => manga.title)).toEqual(["Beta Romance", "Gamma Hero", "Alpha Hero"]);
+    });
+
     it.each([["limit=101"], ["limit=0"], ["page=0"], ["genre=nope"], ["status=nope"], ["sortBy=password"], ["order=sideways"]])(
         "rejects invalid query %s with 400",
         async (query) => {

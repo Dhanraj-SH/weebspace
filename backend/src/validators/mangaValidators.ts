@@ -36,7 +36,7 @@ export const listMangaQuerySchema = paginationSchema.extend({
     q: z.string().trim().max(100).optional(),
     genre: z.enum(mangaGenres).optional(),
     status: z.enum(MangaStatus).optional(),
-    sortBy: z.enum(["ratingAverage", "createdAt", "title"]).default("createdAt"),
+    sortBy: z.enum(["ratingAverage", "ratingCount", "createdAt", "title"]).default("createdAt"),
     order: z.enum(["asc", "desc"]).default("desc"),
 });
 

@@ -11,7 +11,7 @@ const envSchema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     GOOGLE_CALLBACK_URL: z.string().min(1).optional(),
     FRONTEND_URL: z.string().min(1).default("http://localhost:5173"),
-    COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("lax"),
+    COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("none"),
     CORS_ORIGINS: z.string().default("http://localhost:5173"),
     ADMIN_EMAIL: z.string().optional(),
     R2_ACCOUNT_ID: z.string().min(1).optional(),

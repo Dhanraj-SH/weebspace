@@ -5,7 +5,14 @@ import { MangaCard } from '../../components/MangaCard'
 import { PageState } from '../../components/Feedback'
 import { Pagination } from '../../components/Pagination'
 import { api } from '../../lib/api'
+import { useAuth } from '../auth/useAuth'
 import { formatGenre, genreOptions } from './genreOptions'
+
+function MangaGridLoading({ label }: { label: string }) {
+  return <div className="manga-grid loading-manga-grid" role="status" aria-label={label}>
+    {Array.from({ length: 5 }, (_, index) => <div className="manga-skeleton" key={index}><span/><i/><i/></div>)}
+  </div>
+}
 
 function TopReadsCarousel() {
   const result = useQuery({
@@ -16,7 +23,10 @@ function TopReadsCarousel() {
   const stories = result.data?.data ?? []
   const activeStory = stories[activeIndex] ?? stories[0]
 
-  if (result.isLoading) return null
+  if (result.isLoading) return <section className="manga-shelf">
+    <div className="shelf-heading"><div><span className="section-kicker">TOP RATED BY READERS</span><h2>Top reads right now</h2></div></div>
+    <div className="top-reads-loading" role="status" aria-label="Loading top reads"><span/><i/><i/></div>
+  </section>
 
   if (result.isError) {
     return <section className="top-reads-carousel">
@@ -66,7 +76,10 @@ function NewReleases() {
     queryFn: () => api.manga.list({ page: 1, limit: 5, sortBy: 'createdAt', order: 'desc' }),
   })
 
-  if (result.isLoading) return null
+  if (result.isLoading) return <section className="manga-shelf">
+    <div className="shelf-heading"><div><span className="section-kicker">FRESH OFF THE PRESS</span><h2>New releases</h2></div></div>
+    <MangaGridLoading label="Loading new releases"/>
+  </section>
 
   return <section className="manga-shelf">
     <div className="shelf-heading">
@@ -101,7 +114,7 @@ function FeelingSpecial() {
     setPickIndex((currentIndex + offset) % stories.length)
   }
 
-  if (result.isLoading) return null
+  if (result.isLoading) return <section className="feeling-special feeling-special-loading" role="status" aria-label="Loading a surprise pick"><span/><div><i/><i/></div></section>
 
   return <section className="feeling-special">
     <div className="special-copy">
@@ -125,6 +138,7 @@ function FeelingSpecial() {
 }
 
 export function BrowsePage() {
+  const { user, loading: authLoading } = useAuth()
   const [params, setParams] = useSearchParams()
   const search = params.get('q') || ''
   const genre = params.get('genre') || ''
@@ -174,17 +188,17 @@ export function BrowsePage() {
         <select className="status-filter" value={status} onChange={(event) => setFilter('status', event.target.value)} aria-label="Filter by status"><option value="">Any status</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="hiatus">Hiatus</option></select>
       </div>
       <div className="results-label"><span>{search || genre || status ? 'MATCHING STORIES' : 'FRESHLY ADDED'}</span><span>{result.data?.meta?.pagination ? `PAGE ${page} OF ${result.data.meta.pagination.totalPages}` : 'CURATED FOR YOU'}</span></div>
-      {result.isLoading ? <PageState>Loading the library…</PageState> : result.isError ? <PageState error={result.error} action={<button className="text-link" onClick={() => void result.refetch()}>Try again →</button>}/> : result.data?.data.length ? <div className="manga-grid">{result.data.data.map((item) => <MangaCard key={item._id} manga={item}/>)}</div> : <PageState><b>No stories found just yet.</b><span>Try another search or clear your filters.</span></PageState>}
+      {result.isLoading ? <MangaGridLoading label="Loading manga collection"/> : result.isError ? <PageState error={result.error} action={<button className="text-link" onClick={() => void result.refetch()}>Try again →</button>}/> : result.data?.data.length ? <div className="manga-grid">{result.data.data.map((item) => <MangaCard key={item._id} manga={item}/>)}</div> : <PageState><b>No stories found just yet.</b><span>Try another search or clear your filters.</span></PageState>}
       <Pagination page={page} data={result.data?.meta?.pagination} onChange={(value) => setParams((current) => {
         const next = new URLSearchParams(current)
         next.set('page', String(value))
         return next
       })}/>
     </section>
-    <section className="join-banner">
+    {!authLoading && !user && <section className="join-banner">
       <div><span className="section-kicker">YOUR SHELF IS WAITING</span><h2>Every great story<br/>starts with <em>you.</em></h2><p>Make a free account to keep your reading list, pick up where you left off, and find your people.</p></div>
       <div className="join-actions"><Link className="button button-orange" to="/register">Create your account <span aria-hidden="true">↗</span></Link><Link className="button button-outline" to="/login">Already a member? Sign in</Link><small>Free to join. Always a good read.</small></div>
       <span className="join-decoration" aria-hidden="true">W.</span>
-    </section>
+    </section>}
   </main>
 }

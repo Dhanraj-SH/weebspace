@@ -1,17 +1,20 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { RequireAdmin, RequireAuth } from './components/RouteGuards'
-import { AdminChaptersPage } from './features/admin/AdminChaptersPage'
-import { AdminLayout } from './features/admin/AdminLayout'
-import { AdminMangaPage } from './features/admin/AdminMangaPage'
-import { AdminUsersPage } from './features/admin/AdminUsersPage'
-import { AuthCallbackPage, AuthPage } from './features/auth/AuthPage'
-import { BrowsePage } from './features/manga/BrowsePage'
-import { MangaDetailPage } from './features/manga/MangaDetailPage'
-import { SearchPage } from './features/manga/SearchPage'
-import { LibraryPage } from './features/library/LibraryPage'
-import { ProfilePage } from './features/profile/ProfilePage'
-import { ReaderPage } from './features/reader/ReaderPage'
+
+const AdminChaptersPage = lazy(() => import('./features/admin/AdminChaptersPage').then((module) => ({ default: module.AdminChaptersPage })))
+const AdminLayout = lazy(() => import('./features/admin/AdminLayout').then((module) => ({ default: module.AdminLayout })))
+const AdminMangaPage = lazy(() => import('./features/admin/AdminMangaPage').then((module) => ({ default: module.AdminMangaPage })))
+const AdminUsersPage = lazy(() => import('./features/admin/AdminUsersPage').then((module) => ({ default: module.AdminUsersPage })))
+const AuthPage = lazy(() => import('./features/auth/AuthPage').then((module) => ({ default: module.AuthPage })))
+const AuthCallbackPage = lazy(() => import('./features/auth/AuthPage').then((module) => ({ default: module.AuthCallbackPage })))
+const BrowsePage = lazy(() => import('./features/manga/BrowsePage').then((module) => ({ default: module.BrowsePage })))
+const MangaDetailPage = lazy(() => import('./features/manga/MangaDetailPage').then((module) => ({ default: module.MangaDetailPage })))
+const SearchPage = lazy(() => import('./features/manga/SearchPage').then((module) => ({ default: module.SearchPage })))
+const LibraryPage = lazy(() => import('./features/library/LibraryPage').then((module) => ({ default: module.LibraryPage })))
+const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
+const ReaderPage = lazy(() => import('./features/reader/ReaderPage').then((module) => ({ default: module.ReaderPage })))
 
 function ReaderRoute() { const { chapterId = '' } = useParams(); return <ReaderPage key={chapterId} chapterId={chapterId}/> }
 function NotFound() { return <main className="content-page not-found"><span className="section-kicker">404 · LOST BETWEEN THE PAGES</span><h1>We couldn’t find that story.</h1><p>The link may be old, or the chapter has moved.</p><a className="button button-orange" href="/">Back to discovery</a></main> }
